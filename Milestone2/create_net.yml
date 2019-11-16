@@ -1,0 +1,53 @@
+---
+- hosts: localhost
+  user: root
+  become_method: sudo
+  become: yes
+  vars:
+    tVar: "{{ lookup('file', './inputs/input.json') | from_json }}"
+  tasks:
+  - name: List of namespaces
+    command: ip netns list
+    register: ns
+  
+  - set_fact:
+      nslist: "{{ns.stdout}}"
+  - debug:
+      var: nslist
+
+  - name: Create a namespace(subnet router)
+    command: ip netns add "{{item.tenantname}}_SR"
+    with_items:
+      - "{{tVar.input}}"
+    when: '"{{item.tenantname}}_SR" not in nslist'
+
+    # - name: Install OVS
+    #   package:
+    #     name: openvswitch-switch
+    #     state: present
+    # - name: Create OVS Switch
+    #   shell: ovs-vsctl --may-exist add-br "ovs_{{ item }}"
+    #   with_items: "{{ bridge_name }}"
+    #   tags: test
+    # - name: Ansible create netl3.xml for the OVS Bridge
+    #   copy:
+    #     dest: "/etc/libvirt/qemu/networks/net_{{ item }}.xml"
+    #     content: |
+    #       <network>
+    #         <name>net_{{ item  }}</name>
+    #         <bridge name= 'ovs_{{ item }}'/>
+    #         <virtualport type='openvswitch'/>
+    #         <forward mode="bridge"/>
+    #       </network>
+    #   with_items: "{{ bridge_name }}"
+    #   tags: test
+    # - name: Define the Network
+    #   shell: |
+    #     virsh net-define /etc/libvirt/qemu/networks/net_{{ item }}.xml
+    #     virsh net-start net_{{ item }}
+    #   with_items: "{{ bridge_name }}"
+    #   tags: test
+    # - name: Add IP address to OVS SVI
+    #   shell: sudo ip addr add '{{ item.value.IP }}' dev 'ovs_{{ item.key }}'
+    #   when: item.value.type != 'bridge'
+    #   loop: "{{ bridges|dict2items }}"
