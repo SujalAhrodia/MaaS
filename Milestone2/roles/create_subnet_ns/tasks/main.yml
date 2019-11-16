@@ -1,0 +1,40 @@
+--- 
+- name: List of namespaces
+  command: ip netns list
+  register: ns
+
+- name: Make list of existing namespaces
+  set_fact:
+    nslist: "{{ns.stdout}}"
+
+# - name: Testing task
+#   debug:
+#     var: nslist
+
+- name: Create a namespace(subnet router)
+  command: ip netns add "{{item.tenantname}}_SR"
+  with_items:
+    - "{{tVar.input}}"
+  when: '"item.tenantname_SR" not in nslist'
+
+- name: Add veth pair on hypervisor
+  command: ip link add pns-{{item.tenantname}} type veth peer name {{item.tenantname}}-pns
+  with_items:
+    - "{{tVar.input}}"
+  when: '"item.tenantname_SR" not in nslist'
+  
+- name: Add interface to subnet namespace 
+  command: ip link set {{item.tenantname}}-pns netns {{item.tenantname}}_SR
+  with_items:
+    - "{{tVar.input}}"
+  when: '"item.tenantname_SR" not in nslist'
+
+- name: Add interface to the PNS
+  command: ip link set pns-{{item.tenantname}} netns pns
+  with_items:
+    - "{{tVar.input}}"
+  when: '"item.tenantname_SR" not in nslist'
+
+# - name: Configure IP of the namespaces interfaces
+#   command: >
+#     ! sudo ip netns exec ifconfig testif0 10.1.1.1/24 up

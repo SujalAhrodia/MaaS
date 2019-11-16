@@ -3,23 +3,13 @@
   user: root
   become_method: sudo
   become: yes
+  vars_files:
+    - ./vars/config.yml
   vars:
     tVar: "{{ lookup('file', './inputs/input.json') | from_json }}"
-  tasks:
-  - name: List of namespaces
-    command: ip netns list
-    register: ns
   
-  - set_fact:
-      nslist: "{{ns.stdout}}"
-  - debug:
-      var: nslist
-
-  - name: Create a namespace(subnet router)
-    command: ip netns add "{{item.tenantname}}_SR"
-    with_items:
-      - "{{tVar.input}}"
-    when: '"{{item.tenantname}}_SR" not in nslist'
+  roles:
+  - create_subnet_ns
 
     # - name: Install OVS
     #   package:
