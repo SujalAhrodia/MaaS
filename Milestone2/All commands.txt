@@ -1,0 +1,96 @@
+sudo ip netns exec pns ip tunnel add gre1 mode gre remote 172.19.0.5 local 172.19.0.3 ttl 64
+
+sudo ip netns exec pns ip link set dev gre1 up
+
+sudo ip netns exec pns ip addr add 172.18.0.1/24 dev gre1
+
+ece792@t11_vm2:~$ sudo ip netns exec pns ip route
+20.0.0.0/24 dev pns-00 proto kernel scope link src 20.0.0.2
+172.18.0.0/24 dev gre1 proto kernel scope link src 172.18.0.1
+172.19.0.0/24 dev pns-global proto kernel scope link src 172.19.0.3
+172.19.0.5 via 172.19.0.4 dev pns-global
+
+ece792@t11_vm2:~$ ip route
+default via 192.168.126.1 dev ens6 proto dhcp src 192.168.126.90 metric 100
+default via 192.168.124.1 dev ens5 proto dhcp src 192.168.124.85 metric 100
+default via 192.168.122.1 dev ens3 proto dhcp src 192.168.122.8 metric 100
+10.0.0.0/24 dev vxlan0 proto kernel scope link src 10.0.0.1
+172.16.3.0/24 dev ens4 proto kernel scope link src 172.16.3.1
+172.19.0.0/24 dev global-pns proto kernel scope link src 172.19.0.4
+172.19.0.5 via 172.16.3.2 dev ens4
+172.19.0.6 via 172.16.3.2 dev ens4
+192.168.122.0/24 dev ens3 proto kernel scope link src 192.168.122.8
+192.168.122.1 dev ens3 proto dhcp scope link src 192.168.122.8 metric 100
+192.168.123.0/24 dev virbr0 proto kernel scope link src 192.168.123.1
+192.168.124.0/24 dev ens5 proto kernel scope link src 192.168.124.85
+192.168.124.1 dev ens5 proto dhcp scope link src 192.168.124.85 metric 100
+192.168.126.0/24 dev ens6 proto kernel scope link src 192.168.126.90
+192.168.126.1 dev ens6 proto dhcp scope link src 192.168.126.90 metric 100
+
+
+sudo ip netns exec pns ip route add 21.0.0.0/24 dev gre1 via 172.18.0.1
+sudo ip netns exec t1 ip route add default dev pns-t1 via 20.0.0.2
+    
+
+
+# Part 1 -> Create the network for a new tenant (in both hosts)
+# Note: Subnet Router will require MASQUERADE rules (to be tested)
+# Zone 1 -> 172.16.3.1
+#   - Subnet Router range => 20.0.0.0/30 with lower IP at the pns-sr interface
+#   - Tenant subnet range => 22.0.0.0/30 with lower IP at the sr-t<int> interface
+#   - PNS to Host range => 172.19.0.0/30
+#   - GRE interface in PNS => 172.18.0.1/24
+# Zone 2 -> 172.16.3.2
+#   - Subnet Router range => 21.0.0.0/30 with lower IP at the pns-sr interface
+#   - Tenant subnet range => 23.0.0.0/30 with lower IP at the sr-t<int> interface
+#   - PNS to Host range => 172.19.0.4/30
+#   - GRE interface in PNS => 172.18.0.2/24
+#   Create a subnet router
+#   - Veth pair between subnet router and Provider Network
+#   - Default route from subnet router to Provider Network
+#   - Veth pair between subnet router and Tenant Network (per VNET)
+#   - Route for tenant VNET from subnet router to Tenant Netwark (per VNET)
+#   Create a tenant namespace (for that vnet)
+#   - A bridge inside that namespace
+#   - A VXLAN interface on that bridge
+#   - The VXLAN tunnel endpoint will be the interface between the tenant NS and the Subnet Router
+#   - A gateway from that bridge to the tenant namespace - Inside the User provided subnet
+# 
+# Users will provide
+#   Tenant name - Part 1
+#   IP addresses for the VNET - Part 1
+#   Number of hosts needed - Part 2
+#   Zone the hosts need to be in - Part 2
+#
+# Part 2 -> Create VM in the zone requested
+#   Spawn the VMs
+#   Spawn bridges (libvirt bridges in bridge mode) per VM spawned
+#   Connect the VM to the bridge
+#   Add a veth pair from the bridge to the tenant VXLAN bridge
+#   Add a default route on the VM
+#   NOTE: Store VMs MAC address -> Use that python script from HW3 if we want to 
+#         add per VM entry on the bridge fdb. We should test with default MAC entries
+#         and verify the behaviour
+#####~~NAMING CONVENTION~~#####
+VM names = t#vm#
+VM bridge name (libvirt bridge)= t#vm#br
+VM bridge network name (libvirt network)= t#vm#net
+
+Tenant namespace name = t#sn#
+Tenant namespace bridge = t#sn#br
+Interface between t#vm#br and t#sn#br = t#vm#br-t#sn#br and peer name t#sn#br-t#vm#br
+VXLAN Interface = t#sn#vxlan<zone#>
+Gateway between t#sn#br and t#sn# = t#sn#-t#sn#br and peer name t#sn#br-t#sn#
+
+Subnet router name = t#sr
+Interface between t#sr and t#sn# = t#sr-t#sn# and peer name t#sn#-t#sr#
+Interface between t#sr and pns = t#sr-pns and peer name pns-t#sr
+----Ansible ends here---
+
+Interface between pns and host = host-pns and peer name pns-host
+
+Step 1 to execute:
+Mapping between User name and Tenant ID => There should exist a t#sr
+Mapping between User VNET and Subnet ID => There should exist a t#sn#
+Python script to parse 'ip netns list output'
+
