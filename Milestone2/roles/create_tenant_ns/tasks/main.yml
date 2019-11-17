@@ -1,6 +1,4 @@
 # This play will be only be called if a new subnet has to be created for the tenant
-# Steps to Execute
-#   - Add MASQUERADE rules on the subnet router for the Tenant Network
 ---
 - name: Init the octet list
   set_fact:
@@ -32,27 +30,53 @@
 - name: Create a veth peer between SR and Tenant Network
   command: ip link add {{item[0].id}}sr-{{item[0].id}}{{sid}} type veth peer name {{item[0].id}}{{sid}}-{{item[0].id}}sr
 
-- name: Add the veth peers to the corresponding namespace
+- name: Add the interface to SR namespace
   command: ip link set netns {{item[0].id}}sr dev {{item[0].id}}sr-{{item[0].id}}{{sid}}
+
+- name: Add interface to Tenant namespace
   command: ip link set netns {{item[0].id}}{{sid}} dev {{item[0].id}}{{sid}}-{{item[0].id}}sr
 
-- name: Give the veth peer between SR and Tenant Network IP addresses
-  command: ip netns exec {{item[0].id}}sr ip addr add {{ vars[item[0].zone+'_TR']}}.1/30 dev {{item[0].id}}sr-{{item[0].id}}{{sid}}
-  command: ip netns exec {{item[0].id}}{{sid}} ip addr add {{ vars[item[0].zone+'_TR']}}.2/30 dev {{item[0].id}}{{sid}}-{{item[0].id}}sr
+# Subsequent runs start
 
-- name: Enable the Interfaces
+- name: Get file content
+  command: cat ./roles/create_tenant_ns/tasks/counter.yml
+  register: oldcounter
+
+- name: Update counter 1
+  local_action: shell temp=$((`cat ./roles/create_tenant_ns/tasks/counter.yml` + 3)); echo $temp
+  register: newcounter1
+
+- name: Give the veth peer between SR and Tenant Network IP addresses
+  command: ip netns exec {{item[0].id}}sr ip addr add {{ vars[item[0].zone+'_TR']}}.{{newcounter1.stdout}}/30 dev {{item[0].id}}sr-{{item[0].id}}{{sid}}
+
+# Update the Counter again
+
+- name: Update counter 2
+  local_action: shell temp=$((`cat ./roles/create_tenant_ns/tasks/counter.yml` + 4)); echo $temp
+  register: newcounter2
+
+- name: Give the veth peer between Tenant Network and SR IP addresses
+  command: ip netns exec {{item[0].id}}{{sid}} ip addr add {{ vars[item[0].zone+'_TR']}}.{{newcounter2.stdout}}/30 dev {{item[0].id}}{{sid}}-{{item[0].id}}sr
+
+- name: Enable the Interface between SR and TN
   command: ip netns exec {{item[0].id}}sr ip link set dev {{item[0].id}}sr-{{item[0].id}}{{sid}} up
+
+- name: Enable the Interface between TN and SR
   command: ip netns exec {{item[0].id}}{{sid}} ip link set dev {{item[0].id}}{{sid}}-{{item[0].id}}sr up
 
 - name: Create Gateway veth pair
   command: ip netns exec {{item[0].id}}{{sid}} ip link add {{item[0].id}}{{sid}}-{{item[0].id}}{{sid}}br type veth peer name {{item[0].id}}{{sid}}br-{{item[0].id}}{{sid}}
 
-- name: Enable the Gateway Interfaces
+- name: Enable the Gateway Interface on the TN
   command: ip netns exec {{item[0].id}}{{sid}} ip link set dev {{item[0].id}}{{sid}}-{{item[0].id}}{{sid}}br up
+
+- name: Enable the Gateway Interface on the Bridge
   command: ip netns exec {{item[0].id}}{{sid}} ip link set dev {{item[0].id}}{{sid}}br-{{item[0].id}}{{sid}} up
 
 - name: Give the Gateway an IP
   command: ip netns exec {{item[0].id}}{{sid}} ip addr add {{octet_list[0]}}.{{octet_list[1]}}.{{octet_list[1]}}.{{ vars[item[0].zone+'_TR_subnet']}}/24 dev {{item[0].id}}{{sid}}-{{item[0].id}}{{sid}}br
+  
+- name: Add the Gateway interface to the Bridge
   command: ip netns exec {{item[0].id}}{{sid}} brctl addif {{item[0].id}}{{sid}}br {{item[0].id}}{{sid}}br-{{item[0].id}}{{sid}}
 
 - name: Add a VXLAN interface
@@ -68,4 +92,9 @@
   command: ip netns exec {{item[0].id}}{{sid}} bridge fdb append 00:00:00:00:00:00 dst 23.0.0.2 dev vxlan0
 
 - name: Add the ip routes
-  command: ip netns exec {{item[0].id}}{{sid}} ip route add default via 22.0.0.1 dev {{item[0].id}}{{sid}}-{{item[0].id}}sr
+  command: ip netns exec {{item[0].id}}{{sid}} ip route add default via {{ vars[item[0].zone+'_TR']}}.{{newcounter1.stdout}} dev {{item[0].id}}{{sid}}-{{item[0].id}}sr
+
+- name: Updating counter file
+  copy:
+    content: "{{ newcounter2.stdout}}"
+    dest: "./roles/create_tenant_ns/tasks/counter.yml"
