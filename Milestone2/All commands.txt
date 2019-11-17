@@ -48,14 +48,14 @@ sudo ip netns exec t1 ip route add default dev pns-t1 via 20.0.0.2
 #   Create a subnet router
 #   - Veth pair between subnet router and Provider Network
 #   - Default route from subnet router to Provider Network
-#   - Veth pair between subnet router and Tenant Network (per VNET)
-#   - Route for tenant VNET from subnet router to Tenant Netwark (per VNET)
 #   Create a tenant namespace (for that vnet)
 #   - A bridge inside that namespace
 #   - A VXLAN interface on that bridge
 #   - The VXLAN tunnel endpoint will be the interface between the tenant NS and the Subnet Router
 #   - A gateway from that bridge to the tenant namespace - Inside the User provided subnet
-# 
+#   - Veth pair between subnet router and Tenant Network (per VNET)
+#   - Route for tenant VNET on the subnet router to Tenant Netwark (per VNET)
+#   - Add MASQUERADE rules on the subnet router for the Tenant Network
 # Users will provide
 #   Tenant name - Part 1
 #   IP addresses for the VNET - Part 1
@@ -92,5 +92,8 @@ Interface between pns and host = host-pns and peer name pns-host
 Step 1 to execute:
 Mapping between User name and Tenant ID => There should exist a t#sr
 Mapping between User VNET and Subnet ID => There should exist a t#sn#
-Python script to parse 'ip netns list output'
 
+
+
+###~~~Routes to add~~~###
+sudo ip netns exec t#sr ip route add default via 20.0.0.1 dev t#sr-pns

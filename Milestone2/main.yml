@@ -26,6 +26,7 @@
 
   roles:
     - { role: create_subnet_ns, when: '"{{item.tenantname}}_sr" not in nslist'}
+    - create_tenant_ns
   with_items:
     - "{{tVar.input}}"
 
