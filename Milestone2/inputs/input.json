@@ -1,15 +1,12 @@
 {
 	"input": [{
-			"zone": "zone1",
-			"tenantname": "Tenant1",
-			"vms": [1],
-			"subnet": ["", ""]
-		},
-		{
-			"zone": "zone2",
-			"tenantname": "Tenant2",
-			"vms": [1, 2],
-			"subnet": ["", ""]
-		}
-	]
+		"id": "t1",
+		"zone": "zone1",
+		"tenantname": "Tenant1",
+		"vms": [1],
+		"subnet": [
+			"sn1#20.0.0.1",
+			"sn2#"
+		]
+	}]
 }

@@ -16,19 +16,22 @@
   - name: Make list of existing namespaces
     set_fact:
       nslist: "{{ns.stdout}}"
+  
+  - name: Testing task
+    include_tasks: ./step1.yml
+    with_items:
+      - "{{tVar.input}}"
+    loop_control:
+      loop_var: outer_item
+  
+  - debug:
+      var: sid_list
 
-  # - name: Testing task
-  #   include_tasks: ./step1.yml
-  #   with_items:
-  #     - "{{tVar.input}}"
-  #   loop_control:
-  #     loop_var: outer_item
-
-  roles:
-    - { role: create_subnet_ns, when: '"{{item.tenantname}}_sr" not in nslist'}
-    - create_tenant_ns
-  with_items:
-    - "{{tVar.input}}"
+  # roles:
+  #   - { role: create_subnet_ns, when: '"{{item.tenantname}}_sr" not in nslist'}
+  #   - create_tenant_ns
+  # with_items:
+  #   - "{{tVar.input}}"
 
     # - name: Install OVS
     #   package:

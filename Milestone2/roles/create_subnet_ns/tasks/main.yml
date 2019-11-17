@@ -30,15 +30,16 @@
 #   with_items:
 #     - "{{tVar.input}}"
 #   when: '"item.tenantname_SR" not in nslist'
+
 - name: Add default route on SR
   command: ip netns exec {{ t#sr }} ip route add default via {{ vars[item.zone+'_SR']}}.1/30 dev {{ t#sr-pns }}
   with_items:
     - "{{tVar.input}}"
 - name: Add MASQUERADE rule on SR
-iptables:
-  table: nat
-  chain: POSTROUTING
-  action: append
-  out_interface: {{ t#sr-pns }}
-  jump: MASQUERADE
-with_items: # some login here
+  iptables:
+    table: nat
+    chain: POSTROUTING
+    action: append
+    # out_interface: {{ t#sr-pns }}
+    jump: MASQUERADE
+  with_items: # some login here

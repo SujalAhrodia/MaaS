@@ -1,0 +1,8 @@
+---
+- name: Step 1
+  vars:
+    sid_list : []
+  set_fact:
+    sid_list: "{{ sid_list + [item.split('#')[0]] }}"
+  with_items:
+    - "{{outer_item.subnet}}"
