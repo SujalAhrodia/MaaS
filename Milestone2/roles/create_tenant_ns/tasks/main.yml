@@ -19,6 +19,7 @@
   command: ip link set netns {{item[0].id}}{{item[1]}} dev {{item[0].id}}{{item[1]}}-{{item[0].id}}sr
 
 - name: Give the veth peer between SR and Tenant Network IP addresses
+<<<<<<< HEAD
   command: ip netns exec {{item[0].id}}sr ip addr add {{ vars[item[0].zone+'_TR']}}.1/30 dev {{item[0].id}}sr-{{item[0].id}}{{item[1]}}
   command: ip netns exec {{item[0].id}}{{item[1]}} ip addr add {{ vars[item[0].zone+'_TR']}}.2/30 dev {{item[0].id}}{{item[1]}}-{{item[0].id}}sr
 
@@ -43,11 +44,33 @@
 - name: Set the VXLAN interface to up
   command: ip netns exec {{item[0].id}}{{item[1]}} ip link set dev vxlan0 up
 
+=======
+  command: ip netns exec {{item[0].id}}sr ip addr add 22.0.0.x/30 dev {{item[0].id}}sr-{{item[0].id}}{{item[1]}}
+  command: ip netns exec {{item[0].id}}{{item[1]}} ip addr add 22.0.0.x+1/30 dev {{item[0].id}}{{item[1]}}-{{item[0].id}}sr
+
+- name: Create Gateway veth pair
+  command: ip netns exec ip link add {{item[0].id}}{{item[1]}}-{{item[0].id}}{{item[1]}}br type veth peer name {{item[0].id}}{{item[1]}}br-{{item[0].id}}{{item[1]}}
+
+- name: Give the Gateway an IP
+  command: ip netns exec {{item[0].id}}{{item[1]}} ip addr add subnet.1|254/24 dev {{item[0].id}}{{item[1]}}-{{item[0].id}}{{item[1]}}br
+
+- name: Add a VXLAN interface
+  command: ip netns exec {{item[0].id}}{{item[1]}} ip link add vxlan0 type vxlan id 42 dev {{item[0].id}}_vxlan remote 23.0.0.x dstport 4789
+
+- name: Set the VXLAN interface to up
+  command: ip netns exec {{item[0].id}}{{item[1]}} ip link set dev vxlan0 up
+  
+>>>>>>> ff45c3c7f20694f175c70680b29668cb21556f11
 - name: Add the VXLAN to the bridge
   command: ip netns exec {{item[0].id}}{{item[1]}} brctl addif {{item[0].id}}{{item[1]}}br vxlan0
 
 - name: Update FDB table
+<<<<<<< HEAD
   command: ip netns exec {{item[0].id}}{{item[1]}} bridge fdb append 00:00:00:00:00:00 dst 23.0.0.2 dev vxlan0
 
+=======
+  command: ip netns exec {{item[0].id}}{{item[1]}} bridge fdb append 00:00:00:00:00:00 dst 23.0.0.x dev vxlan0
+  
+>>>>>>> ff45c3c7f20694f175c70680b29668cb21556f11
 - name: Add the ip routes
   command: ip netns exec {{item[0].id}}{{item[1]}} ip route add default via 22.0.0.1 dev {{item[0].id}}{{item[1]}}-{{item[0].id}}sr

@@ -7,28 +7,60 @@
   
 - name: Add interface to subnet namespace 
   command: ip link set {{item.id}}sr-pns netns {{item.id}}sr
-  
+
+- name: Up the Tenant iterface
+  command: ip netns exec {{item.id}}sr ip link set dev {{item.id}}sr-pns up  
+
 - name: Add interface to the PNS
   command: ip link set pns-{{item.id}}sr netns pns
-  
-# - name: Get file number
-#   local_action: shell file=$((`cat ./counter.yml` + 1)); echo $file | tee ./counter.yml
-#   register: counter
 
-# - name: Set file name
-#   command: 'touch file{{ counter.stdout }}'
+- name: Up the PNS iterface
+  command: ip netns exec pns ip link set dev pns-{{item.id}}sr up
+
+# Subsequent runs start
+
+- name: Get file content
+  command: cat ./counter.yml
+  register: oldcounter
+
+- name: Update counter 1
+  local_action: shell temp=$((`cat ./counter.yml` + 3)); echo $temp
+  register: newcounter1
 
 - name: Configure IP of the PNS interfaces
-  command: ip netns exec pns ip addr add {{ vars[item.zone+'_SR']}}.1/30 dev pns-{{item.id}}sr
+  command: ip netns exec pns ip addr add {{ vars[item.zone+'_SR']}}.{{newcounter1.stdout}}/30 dev pns-{{item.id}}sr
   tags: ip
 
-- name: Configure IP of the SR interfaces
-  command: ip netns exec {{item.id}}sr ip addr add {{ vars[item.zone+'_SR']}}.2/30 dev {{item.id}}sr-pns
-
 - name: Add default route on SR
-  command: ip netns exec {{ t#sr }} ip route add default via {{ vars[item.zone+'_SR']}}.1/30 dev {{item.id}}sr-pns
-  with_items:
-    - "{{tVar.input}}"
+  command: ip netns exec {{item.id}}sr ip route add default via {{ vars[item.zone+'_SR']}}.{{newcounter1.stdout}} dev {{item.id}}sr-pns
+
+- name: Update counter 2
+  local_action: shell temp=$((`cat ./counter.yml` + 4)); echo $temp
+  register: newcounter2
+
+- name: Configure IP of the SR interfaces
+  command: ip netns exec {{item.id}}sr ip addr add {{ vars[item.zone+'_SR']}}.{{newcounter2.stdout}}/30 dev {{item.id}}sr-pns
+
+- name: Updating counter file
+  copy:
+    content: "{{ newcounter2.stdout}}"
+    dest: "./counter.yml"
+
+# Subsequent runs end
+
+# First run start
+
+# - name: Configure IP of the PNS interfaces
+#   command: ip netns exec pns ip addr add {{ vars[item.zone+'_SR']}}.1/30 dev pns-{{item.id}}sr
+#   tags: ip
+
+# - name: Configure IP of the SR interfaces
+#   command: ip netns exec {{item.id}}sr ip addr add {{ vars[item.zone+'_SR']}}.2/30 dev {{item.id}}sr-pns
+
+# - name: Add default route on SR
+#   command: ip netns exec {{item.id}}sr ip route add default via {{ vars[item.zone+'_SR']}}.1 dev {{item.id}}sr-pns
+
+# First run end
 
 - name: Add MASQUERADE rule on SR
   iptables:
