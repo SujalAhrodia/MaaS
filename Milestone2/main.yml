@@ -10,6 +10,7 @@
   
   roles:
   - create_subnet_ns
+  - create_tenant_ns
 
     # - name: Install OVS
     #   package:

@@ -1,0 +1,44 @@
+# This play will be only be called if a new subnet has to be created for the tenant
+# Steps to Execute
+#   - Add MASQUERADE rules on the subnet router for the Tenant Network
+---
+- name: Create the namespace
+# Naming Scheme t#sn#
+# sudo ip netns add t#sn#
+- name: Create bridge inside the namespace
+# Naming Scheme t#sn#br
+# sudo ip netns exec t#sn# brctl addbr t#sn#br
+- name: Set the bridge to up
+# sudo ip netns exec t#sn# ip link set dev t#sn#br up
+- name: Create a veth peer between SR and Tenant Network
+# Interface between t#sr and t#sn# = t#sr-t#sn# and peer name t#sn#-t#sr#
+# sudo ip link add t#sr-t#sn# type veth peer name t#sn#-t#sr#
+- name: Add the veth peers to the corresponding namespace
+# sudo ip link set netns t#sr dev t#sr-t#sn#
+# sudo ip link set netns t#sn# dev t#sn#-t#sr
+- name: Give the veth peed between SR and Tenant Network IP addresses
+# Zone 1 -> 172.16.3.1
+#   - Tenant subnet range => 22.0.0.0/30 with lower IP at the t#sr-t#sn# interface
+# Zone 2 -> 172.16.3.2
+#   - Tenant subnet range => 23.0.0.0/30 with lower IP at the t#sr-t#sn# interface
+# sudo ip netns exec t#sr ip addr add 22.0.0.x/30 dev t#sr-t#sn#
+# sudo ip netns exec t#sn# ip addr add 22.0.0.x+1/30 dev t#sn#-t#sr
+- name: Create Gateway veth pair
+# Gateway between t#sn#br and t#sn# = t#sn#-t#sn#br and peer name t#sn#br-t#sn#
+# sudo ip netns exec ip link add t#sn#-t#sn#br type veth peer name t#sn#br-t#sn#
+# sudo ip netns exec brctl addif t#sn#br t#sn#br-t#sn#
+- name: Give the Gateway an IP
+# Zone 1 => subnet.1/24
+# Zone 1 => subnet.254/24
+# sudo ip netns exec t#sn# ip addr add subnet.1|254/24 dev t#sn#-t#sn#br
+- name: Add a VXLAN interface
+# Zone 1 => 22.0.0.0/30. VXLAN points to 23.0.0.x
+# Zone 2 => 23.0.0.0/30. VXLAN points to 22.0.0.x
+# sudo ip netns exec t#sn# ip link add vxlan0 type vxlan id 42 dev t#_vxlan remote 23.0.0.x dstport 4789
+- name: Set the VXLAN interface to up
+# sudo ip netns exec t#sn# ip link set dev vxlan0 up
+- name: Add the VXLAN to the bridge
+# sudo ip netns exec t#sn# brctl addif t#sn#br vxlan0
+- name: Update FDB table
+# sudo ip netns exec t#sn# bridge fdb append 00:00:00:00:00:00 dst 23.0.0.x dev vxlan0
+- name: 
