@@ -20,11 +20,11 @@
 # Subsequent runs start
 
 - name: Get file content
-  command: cat ./counter.yml
+  command: cat ./roles/create_subnet_ns/tasks/counter.yml
   register: oldcounter
 
 - name: Update counter 1
-  local_action: shell temp=$((`cat ./counter.yml` + 3)); echo $temp
+  local_action: shell temp=$((`cat ./roles/create_subnet_ns/tasks/counter.yml` + 3)); echo $temp
   register: newcounter1
 
 - name: Configure IP of the PNS interfaces
@@ -35,7 +35,7 @@
   command: ip netns exec {{item.id}}sr ip route add default via {{ vars[item.zone+'_SR']}}.{{newcounter1.stdout}} dev {{item.id}}sr-pns
 
 - name: Update counter 2
-  local_action: shell temp=$((`cat ./counter.yml` + 4)); echo $temp
+  local_action: shell temp=$((`cat ./roles/create_subnet_ns/tasks/counter.yml` + 4)); echo $temp
   register: newcounter2
 
 - name: Configure IP of the SR interfaces
@@ -44,7 +44,7 @@
 - name: Updating counter file
   copy:
     content: "{{ newcounter2.stdout}}"
-    dest: "./counter.yml"
+    dest: "./roles/create_subnet_ns/tasks/counter.yml"
 
 # Subsequent runs end
 
