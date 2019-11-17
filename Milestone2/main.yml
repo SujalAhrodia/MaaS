@@ -24,6 +24,19 @@
     loop_control:
       loop_var: outer_item
   
+  # - name: Create counter file
+  #   file: 
+  #     path: "{{ item.path }}" 
+  #     state: "{{ item.state }}"
+  #   with_items:
+  #     - { path: './counter.yml', state: 'absent' }
+  #     - { path: './counter.yml', state: 'touch' }
+
+  # - name: Managing counter file
+  #   lineinfile: 
+  #     dest: ./counter.yml
+  #     line: '2'
+
   - include_role:
       name: create_subnet_ns
     with_items:
@@ -35,8 +48,6 @@
     with_nested:
       - "{{tVar.input}}"
       - "{{sid_list}}"
-
-    # - "{{tVar.input}}"
 
     # - name: Install OVS
     #   package:
