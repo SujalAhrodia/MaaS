@@ -1,29 +1,21 @@
 --- 
 - name: Create a namespace(subnet router)
-  command: ip netns add "{{item.tenantname}}_SR"
-  with_items:
-    - "{{tVar.input}}"
+  command: ip netns add "{{item.id}}sr"
 
 - name: Add veth pair on hypervisor
-  command: ip link add pns-{{item.tenantname}} type veth peer name {{item.tenantname}}-pns
-  with_items:
-    - "{{tVar.input}}"
+  command: ip link add pns-{{item.id}} type veth peer name {{item.id}}-pns
   
 - name: Add interface to subnet namespace 
-  command: ip link set {{item.tenantname}}-pns netns {{item.tenantname}}_SR
-  with_items:
-    - "{{tVar.input}}"
+  command: ip link set {{item.id}}-pns netns {{item.id}}-sr
   
 - name: Add interface to the PNS
-  command: ip link set pns-{{item.tenantname}} netns pns
-  with_items:
-    - "{{tVar.input}}"
+  command: ip link set pns-{{item.id}} netns pns
   
-- name: Configure IP of the PNS interfaces
-  command: ip netns exec pns ip addr add {{ vars[item.zone+'_SR']}}.1/30 dev pns-{{item.tenantname}}
-  with_items:
-    - "{{tVar.input}}"
-  tags: ip
+# - name: Configure IP of the PNS interfaces
+#   command: ip netns exec pns ip addr add {{ vars[item.zone+'_SR']}}.1/30 dev pns-{{item.tenantname}}
+#   with_items:
+#     - "{{tVar.input}}"
+#   tags: ip
 
 # - name: Configure IP of the SR interfaces
 #   command: ip netns exec {{item.tenantname}}_SR ip addr add 20.0.0.2/30 {{item.tenantname}}-pns
@@ -31,15 +23,15 @@
 #     - "{{tVar.input}}"
 #   when: '"item.tenantname_SR" not in nslist'
 
-- name: Add default route on SR
-  command: ip netns exec {{ t#sr }} ip route add default via {{ vars[item.zone+'_SR']}}.1/30 dev {{ t#sr-pns }}
-  with_items:
-    - "{{tVar.input}}"
-- name: Add MASQUERADE rule on SR
-  iptables:
-    table: nat
-    chain: POSTROUTING
-    action: append
-    # out_interface: {{ t#sr-pns }}
-    jump: MASQUERADE
-  with_items: # some login here
+# - name: Add default route on SR
+#   command: ip netns exec {{ t#sr }} ip route add default via {{ vars[item.zone+'_SR']}}.1/30 dev {{ t#sr-pns }}
+#   with_items:
+#     - "{{tVar.input}}"
+# - name: Add MASQUERADE rule on SR
+#   iptables:
+#     table: nat
+#     chain: POSTROUTING
+#     action: append
+#     # out_interface: {{ t#sr-pns }}
+#     jump: MASQUERADE
+#   with_items: # some login here

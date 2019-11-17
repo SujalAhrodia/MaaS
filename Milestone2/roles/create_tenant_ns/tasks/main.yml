@@ -3,10 +3,10 @@
 #   - Add MASQUERADE rules on the subnet router for the Tenant Network
 ---
 - name: Create the namespace
-  debug:
-    var: item
 # Naming Scheme t#sn#
-# sudo ip netns add t#sn#
+  command: ip netns add {{item[0].id}}{{item[1]}}
+# # sudo ip netns add t#sn#
+
 # - name: Create bridge inside the namespace
 # # Naming Scheme t#sn#br
 # # sudo ip netns exec t#sn# brctl addbr t#sn#br

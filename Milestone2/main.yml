@@ -25,9 +25,15 @@
       loop_var: outer_item
   
   - include_role:
-    # - { role: create_subnet_ns, when: '"{{item.tenantname}}_sr" not in nslist'}
-      name: create_tenant_ns
+      name: create_subnet_ns
     with_items:
+      - "{{tVar.input}}"
+    when: '"{{item.id}}sr" not in nslist'
+    
+  - include_role:
+      name: create_tenant_ns
+    with_nested:
+      - "{{tVar.input}}"
       - "{{sid_list}}"
 
     # - "{{tVar.input}}"
