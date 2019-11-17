@@ -25,15 +25,15 @@
       loop_var: outer_item
   
   # First run start
-  # - name: Create counter file
-  #   file:
-  #     path: ./counter.yml
-  #     state: touch
+  - name: Create counter file
+    file:
+      path: ./counter.yml
+      state: touch
 
-  # - name: Managing counter file
-  #   lineinfile: 
-  #     dest: ./counter.yml
-  #     line: '2'
+  - name: Managing counter file
+    lineinfile: 
+      dest: ./counter.yml
+      line: '2'
   # First run end
 
   - include_role:
@@ -42,11 +42,11 @@
       - "{{tVar.input}}"
     when: '"{{item.id}}sr" not in nslist'
     
-  - include_role:
-      name: create_tenant_ns
-    with_nested:
-      - "{{tVar.input}}"
-      - "{{sid_list}}"
+  # - include_role:
+  #     name: create_tenant_ns
+  #   with_nested:
+  #     - "{{tVar.input}}"
+  #     - "{{sid_list}}"
   
-  - include_role:
-      name: create_vm
+  # - include_role:
+  #     name: create_vm
