@@ -3,6 +3,6 @@
   vars:
     sid_list : []
   set_fact:
-    sid_list: "{{ sid_list + [item.split('#')[0]] }}"
+    sid_list: "{{ sid_list + [item]}}"
   with_items:
     - "{{outer_item.subnet}}"
