@@ -8,8 +8,26 @@
   vars:
     tVar: "{{ lookup('file', './inputs/input.json') | from_json }}"
   
+  tasks:
+  - name: List of namespaces
+    command: ip netns list
+    register: ns
+  
+  - name: Make list of existing namespaces
+    set_fact:
+      nslist: "{{ns.stdout}}"
+
+  # - name: Testing task
+  #   include_tasks: ./step1.yml
+  #   with_items:
+  #     - "{{tVar.input}}"
+  #   loop_control:
+  #     loop_var: outer_item
+
   roles:
-  - create_subnet_ns
+    - { role: create_subnet_ns, when: '"{{item.tenantname}}_sr" not in nslist'}
+  with_items:
+    - "{{tVar.input}}"
 
     # - name: Install OVS
     #   package:
