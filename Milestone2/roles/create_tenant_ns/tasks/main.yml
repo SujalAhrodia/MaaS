@@ -16,7 +16,7 @@
 - name: Add the veth peers to the corresponding namespace
 # sudo ip link set netns t#sr dev t#sr-t#sn#
 # sudo ip link set netns t#sn# dev t#sn#-t#sr
-- name: Give the veth peed between SR and Tenant Network IP addresses
+- name: Give the veth peer between SR and Tenant Network IP addresses
 # Zone 1 -> 172.16.3.1
 #   - Tenant subnet range => 22.0.0.0/30 with lower IP at the t#sr-t#sn# interface
 # Zone 2 -> 172.16.3.2
@@ -41,4 +41,5 @@
 # sudo ip netns exec t#sn# brctl addif t#sn#br vxlan0
 - name: Update FDB table
 # sudo ip netns exec t#sn# bridge fdb append 00:00:00:00:00:00 dst 23.0.0.x dev vxlan0
-- name: 
+- name: Add the ip routes
+# sudo ip netns exec t#sn# ip route add default via 22.0.0.1 dev t#sn#-t#sr

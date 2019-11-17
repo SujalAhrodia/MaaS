@@ -92,3 +92,8 @@ Interface between pns and host = host-pns and peer name pns-host
 Step 1 to execute:
 Mapping between User name and Tenant ID => There should exist a t#sr
 Mapping between User VNET and Subnet ID => There should exist a t#sn#
+
+
+
+###~~~Routes to add~~~###
+sudo ip netns exec t#sr ip route add default via 20.0.0.1 dev t#sr-pns
