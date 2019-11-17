@@ -33,6 +33,21 @@ sudo ip netns exec t1 ip route add default dev pns-t1 via 20.0.0.2
     
 
 
+Virt-builder commands
+
+export LIBGUESTFS_BACKEND=direct
+sudo virt-builder centos-7.0 --root-password password:root -o build-test.img --size 10G -v
+
+virt-install -n temporary_vm --memory 2048 --vcpus 1 --import build-test.img --os-variant rhel7 
+
+
+# TO DO
+# - Main logic to chose the appropriate role
+# - Test create_tenant_ns and create_vm roles
+# - Verify virt-builder with extended commands
+# - Logic to name the VMs (send 'VM ids')
+
+
 # Part 1 -> Create the network for a new tenant (in both hosts)
 # Note: Subnet Router will require MASQUERADE rules (to be tested)
 # Zone 1 -> 172.16.3.1
@@ -97,3 +112,13 @@ Mapping between User VNET and Subnet ID => There should exist a t#sn#
 
 ###~~~Routes to add~~~###
 sudo ip netns exec t#sr ip route add default via 20.0.0.1 dev t#sr-pns
+
+
+
+
+The serial console is not working in this image (apparently a bug
+in Ubuntu).  To enable it, do:
+
+--edit '/etc/default/grub:
+           s/^GRUB_CMDLINE_LINUX_DEFAULT=.*/GRUB_CMDLINE_LINUX_DEFAULT="console=tty0 console=ttyS0,115200n8"/' \
+--run-command update-grub

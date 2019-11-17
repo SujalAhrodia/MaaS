@@ -35,6 +35,10 @@
     with_nested:
       - "{{tVar.input}}"
       - "{{sid_list}}"
+  
+  - include_role:
+      name: create_vm
+      
 
     # - "{{tVar.input}}"
 
