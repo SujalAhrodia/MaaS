@@ -4,8 +4,7 @@
   set_fact:
     octet_list: []
     sid: "{{item[1].split('#')[0]}}"
-- debug:
-    var: sid
+    
 - name: All the splitting
   vars:
     octet_list: []
