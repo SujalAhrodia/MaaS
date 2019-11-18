@@ -1,0 +1,52 @@
+---
+- hosts: zones
+  user: root
+  become_method: sudo
+  become: yes
+  vars_files:
+    - ./vars/config.yml
+  vars:
+    tVar: "{{ lookup('file', './inputs/input.json') | from_json }}"
+  
+  tasks:
+  - name: List of namespaces
+    command: ip netns list
+    register: ns
+  
+  - name: Make list of existing namespaces
+    set_fact:
+      nslist: "{{ns.stdout}}"
+  
+  - name: Creating sid_list
+    include_tasks: ./step1.yml
+    with_items:
+      - "{{tVar.input}}"
+    loop_control:
+      loop_var: outer_item
+  
+  # First run start
+  # - name: Create counter file
+  #   file:
+  #     path: ./counter.yml
+  #     state: touch
+
+  # - name: Managing counter file
+  #   lineinfile: 
+  #     dest: ./counter.yml
+  #     line: '2'
+  # First run end
+
+  - include_role:
+      name: create_subnet_ns
+    with_items:
+      - "{{tVar.input}}"
+    when: '"{{item.id}}sr" not in nslist'
+    
+  - include_role:
+      name: create_tenant_ns
+    with_nested:
+      - "{{tVar.input}}"
+      - "{{sid_list}}"
+  
+  - include_role:
+      name: create_vm
