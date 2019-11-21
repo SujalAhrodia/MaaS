@@ -30,23 +30,23 @@ default via 192.168.122.1 dev ens3 proto dhcp src 192.168.122.8 metric 100
 
 sudo ip netns exec pns ip route add 21.0.0.0/24 dev gre1 via 172.18.0.1
 sudo ip netns exec t1 ip route add default dev pns-t1 via 20.0.0.2
-    
+   
+
+DEMO COMMAND:
+
+curl -G http://192.168.123.95:8086/query?pretty=true --data-urlencode "db=collectd" --data-urlencode "q=SELECT \"value\" FROM \"ret_pol_1\".\"cpu_value\" LIMIT 10"
+
+sudo ip netns exec t1sn1 ssh root@35.0.0.2 'ping 35.0.0.3 -c 20' | sudo ip netns exec pns tcpdump -i pns-global -nnev -c 10
 
 
 Virt-builder commands
 
 export LIBGUESTFS_BACKEND=direct
-sudo virt-builder centos-7.0 --root-password password:root -o build-test.img --size 10G -v
+sudo virt-builder centos-7.0 --root-password password:root -o build-test.img --size 10G --firstboot-command 'dhclient' -v --attach <Centos ISO>
+
+http://libguestfs.org/download/builder/centos-7.0.xz
 
 virt-install -n temporary_vm --memory 2048 --vcpus 1 --import build-test.img --os-variant rhel7 
-
-
-# TO DO
-# - Main logic to chose the appropriate role
-# - Test create_tenant_ns and create_vm roles
-# - Verify virt-builder with extended commands
-# - Logic to name the VMs (send 'VM ids')
-
 
 # Part 1 -> Create the network for a new tenant (in both hosts)
 # Note: Subnet Router will require MASQUERADE rules (to be tested)
@@ -114,11 +114,110 @@ Mapping between User VNET and Subnet ID => There should exist a t#sn#
 sudo ip netns exec t#sr ip route add default via 20.0.0.1 dev t#sr-pns
 
 
-
-
 The serial console is not working in this image (apparently a bug
 in Ubuntu).  To enable it, do:
 
 --edit '/etc/default/grub:
            s/^GRUB_CMDLINE_LINUX_DEFAULT=.*/GRUB_CMDLINE_LINUX_DEFAULT="console=tty0 console=ttyS0,115200n8"/' \
 --run-command update-grub
+
+
+
+Northbound for VPC deployment:
+CLI for Users to generate their data in the format below
+    Customer responsibility is to enter the information correctly.
+    ? Maybe they will have an option to remove networks (using a ! identifier)
+
+Data format =>
+
+TenantName: {
+    Zone1:{
+        VM1: [
+            10.0.0.0/24,
+            ,
+            sn3
+        ]
+        VM2: [
+            sn3
+        ]
+    },
+    Zone2: {
+        VM3: [
+            sn2
+        ]
+    }
+}
+
+Logic Layer for VPC deployment:
+
+TenantName-ID.json
+{   # Generate
+    TenantName: ID,
+    10.0.0.0/24: sn1,
+    '': sn2,
+    '': sn3,
+    VM1: [Zone, Management IP, IP1, IP2]
+    IFDB: IP
+    IFDB_bak: IP
+    Virtual IP: IP
+}
+ 
+{
+    Zone1: 172.16.3.1
+    Zone2: 172.16.3.2
+    zone1_SR: 20.0.0
+    zone2_SR: 21.0.0
+    zone1_TR: 22.0.0
+    zone2_TR: 23.0.0
+    zone1_TR_subnet: 1
+    zone2_TR_subnet: 254
+}
+
+
+
+Logic Layer 1:
+    Generate TID from Tenant Name
+        - Read Directory
+        - If Tenant Name is already there:
+            TID = Count of number of files + 1
+            Parse and generate the file from teh data given by the User
+        - Else:
+            edit the same file
+            Parse and add the data from the User
+
+Logic Layer 2(in order):
+    Check if subnet router exists: (ip netns list)
+        If yes, continue
+        Else, 
+            use SR play - ansible-playbook ? tenant.json (#TID)
+            use IFDB play - 
+                update tenant.json with IFDB IPs and VIP chosen
+                edit keepalived and start the service
+                edit the backup.sh
+    Check if TR exists: (ip netns list)
+        If yes, continue
+        Else, use TR play (#TID, #SID)
+    Check if VM exists: (virsh list)
+        If yes, continue
+        Else, 
+            use VM play (#TID,#VMID, #ZONE)
+            edit tenant.json with VM Management IP
+            edit collect.d conf and start the service
+    Check if interface exists: (virsh domiflist)
+        If yes, continue
+        Else, use Interface play (#TID, #VMID, #SID, #ZONE)
+            Check Zone ID (virsh attach) : TIDVMID, TIDSID
+            (? detach)
+
+
+To research: How to remove an iP from either dhcpd or dnsmasq
+            How to send vars to Ansible playbook
+            Collectd custom plugin
+            Grafana custom Dashboard
+            Decide on collectd custom plugin -> Use the HW script
+
+Plays Needed:
+    SR Generation (per tenant)
+        #TID
+        -> Create NS
+        -> Add Interface

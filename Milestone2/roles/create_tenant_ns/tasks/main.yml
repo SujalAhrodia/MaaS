@@ -80,7 +80,7 @@
   command: ip netns exec {{item[0].id}}{{sid}} brctl addif {{item[0].id}}{{sid}}br {{item[0].id}}{{sid}}br-{{item[0].id}}{{sid}}
 
 - name: Add a VXLAN interface
-  command: ip netns exec {{item[0].id}}{{sid}} ip link add vxlan0 type vxlan id 42 dev {{item[0].id}}{{sid}}-{{item[0].id}}sr remote 23.0.0.2 dstport 4789
+  command: ip netns exec {{item[0].id}}{{sid}} ip link add vxlan0 type vxlan id 42 dev {{item[0].id}}{{sid}}-{{item[0].id}}sr remote 23.0.0.1 dstport 4789
 
 - name: Set the VXLAN interface to up
   command: ip netns exec {{item[0].id}}{{sid}} ip link set dev vxlan0 up
@@ -89,7 +89,7 @@
   command: ip netns exec {{item[0].id}}{{sid}} brctl addif {{item[0].id}}{{sid}}br vxlan0
 
 - name: Update FDB table
-  command: ip netns exec {{item[0].id}}{{sid}} bridge fdb append 00:00:00:00:00:00 dst 23.0.0.2 dev vxlan0
+  command: ip netns exec {{item[0].id}}{{sid}} bridge fdb append 00:00:00:00:00:00 dst 23.0.0.1 dev vxlan0
 
 - name: Add the ip routes
   command: ip netns exec {{item[0].id}}{{sid}} ip route add default via {{ vars[item[0].zone+'_TR']}}.{{newcounter1.stdout}} dev {{item[0].id}}{{sid}}-{{item[0].id}}sr
