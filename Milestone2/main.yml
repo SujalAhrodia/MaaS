@@ -1,5 +1,5 @@
 ---
-- hosts: all
+- hosts: zones
   user: root
   become_method: sudo
   become: yes

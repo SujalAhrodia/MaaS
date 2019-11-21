@@ -63,4 +63,4 @@
 # First run end
 
 - name: Add MASQUERADE rule on SR
-  command: ip netns exec {{item.id}}sr iptables -A POSTROUTING -t nat -o {{item.id}}sr-pns -j MASQUERADE
+  command: ip netns exec {{item.id}}sr iptables -A POSTROUTING -t nat -d 172.20.0.4 -o {{item.id}}sr-pns -j MASQUERADE
