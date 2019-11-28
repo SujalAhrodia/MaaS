@@ -131,6 +131,7 @@ CLI for Users to generate their data in the format below
 Data format =>
 
 TenantName: {
+    VPC: True,
     Zone1:{
         VM1: [
             10.0.0.0/24,
@@ -147,6 +148,11 @@ TenantName: {
         ]
     }
 }
+
+TenantName:{
+    Monitoring: True,
+    
+    }
 
 Logic Layer for VPC deployment:
 
