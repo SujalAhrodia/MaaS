@@ -151,8 +151,14 @@ TenantName: {
 
 TenantName:{
     Monitoring: True,
-    
+    CPU: True,
+    Memory: True,
+    Custom:
+    {
+    key: value,
+    file: filename
     }
+}
 
 Logic Layer for VPC deployment:
 
@@ -166,6 +172,19 @@ TenantName-ID.json
     IFDB: IP
     IFDB_bak: IP
     Virtual IP: IP
+}
+
+TenantName-ID-M.json
+{   # Generate
+    TenantName: ID,
+    enable: True,
+    CPU: True,
+    Memory: True,
+    Custom:
+    {
+    key: value,
+    file: filename
+    }
 }
  
 {

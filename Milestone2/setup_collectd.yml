@@ -1,0 +1,16 @@
+---
+- hosts: tenant_vms
+  user: root
+  become_method: sudo
+  become: yes
+  tasks:
+  - name: Copy the collectd.conf
+    copy:
+      src: tenant_collectd.conf
+      dest: /etc/collectd.conf
+      owner: root
+      mode: '0644'
+  - name:
+    systemd:
+      name: collectd
+      state: restarted
