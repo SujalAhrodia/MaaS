@@ -4,13 +4,17 @@
   become_method: sudo
   become: yes
   tasks:
+  - debug:
+     var: "{{ collectd_file }}"
   - name: Copy the collectd.conf
     copy:
-      src: tenant_collectd.conf
+      src: "{{ item }}"
       dest: /etc/collectd.conf
       owner: root
       mode: '0644'
-  - name:
+    with_items:
+      - "{{ collectd_file }}"
+  - name: Restarting Collectd on the VM
     systemd:
       name: collectd
       state: restarted
