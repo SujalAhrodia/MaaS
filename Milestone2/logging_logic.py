@@ -86,6 +86,8 @@ def parse_input_json(input_data):
     # print(Tenant_name)
     tenant_file = get_tenant_vpc_file(tenant_name)
     # print(tenant_file)
+    if tenant_file == 0:
+        return 'Tenant File Not found. Looking for {}.json'.format(tenant_name)
     with open(tenant_file, 'r') as f:
         tenant_vpc_data = json.loads(''.join(f.readlines()))
     print(tenant_vpc_data)
@@ -160,6 +162,7 @@ def get_tenant_vpc_file(Tenant_name):
     for items in list_of_files:
         if Tenant_name in items:
             return list_of_files[list_of_files.index(items)]
+    return 0
 
 
 def delete_the_file(file_name):
