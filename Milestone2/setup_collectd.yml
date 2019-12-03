@@ -4,8 +4,6 @@
   become_method: sudo
   become: yes
   tasks:
-  - debug:
-     var: "{{ collectd_file }}"
   - name: Copy the collectd.conf
     copy:
       src: "{{ item }}"
