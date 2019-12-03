@@ -214,7 +214,7 @@ Logic Layer 2(in order):
     Check if subnet router exists: (ip netns list)
         If yes, continue
         Else, 
-            use SR play - ansible-playbook ? tenant.json (#TID)
+            use SR play - ansible-playbook --extra-vars "tenant.json" (#TID)
             use IFDB play - 
                 update tenant.json with IFDB IPs and VIP chosen
                 edit keepalived and start the service
@@ -236,9 +236,9 @@ Logic Layer 2(in order):
 
 
 To research: How to remove an iP from either dhcpd or dnsmasq
-            How to send vars to Ansible playbook
-            Collectd custom plugin
-            Grafana custom Dashboard
+            How to send vars to Ansible playbook (done)
+            Collectd custom plugin (done)
+            Grafana custom Dashboard (N/A)
             Decide on collectd custom plugin -> Use the HW script
 
 Plays Needed:
