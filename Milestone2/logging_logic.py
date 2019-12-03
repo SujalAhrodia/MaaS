@@ -9,7 +9,7 @@ mock_input_data = {
         'CPU': True,
         'Memory': True,
         'Interface': False,
-        'Traffic Monitoring': False,
+        'Traffic Monitoring': True,
         'Custom': {
             'flag': True,
             'file': 'filename'
@@ -71,6 +71,14 @@ inventory_header = '[tenant_vms]\n'
 inventory_common_data = 'ansible_connection=ssh ansible_ssh_user=root ansible_ssh_pass=root'
 
 
+router_logging_sh = '''
+count=$(sudo ip netns exec {0} iptables -nvL INPUT| grep TRAFFIC | awk '{{print $1}}')
+echo $count
+curl -i -XPOST 'http://{1}:8086/write?db=collectd' --data-binary 'trial,protocol=tcp value="'"$count"'"'
+sudo ip netns exec {0} iptables -Z
+'''
+
+
 def parse_input_json(input_data):
     monitoring_data = list(input_data.values())[0]
     # print(monitoring_data)
@@ -90,7 +98,7 @@ def parse_input_json(input_data):
     if monitoring_data['Monitoring']:
         inventory_file_name = tenant_id + '-inventory.ini'
         delete_the_file(inventory_file_name)
-        inventory_file_handler = open(inventory_file_name, 'a+')
+        inventory_file_handler = open(inventory_file_name, 'a')
         inventory_file_handler.write(inventory_header)
         for vm in vm_id_list:
             vm_collectd_file_name = tenant_id + vm + '_collectd.conf'
@@ -113,6 +121,24 @@ def parse_input_json(input_data):
                 collectd_file_handler.write('LoadPlugin interface')
             if monitoring_data['Traffic Monitoring']:
                 print('Call the ansible script')
+                # q = Popen('sudo ip netns exec {} iptables -A INPUT -p tcp -m comment --comment "TRAFFIC" -j ACCEPT'
+                #           .format(tenant_id + 'sr'),
+                #           shell=True)
+                # (output, err) = q.communicate()
+                # q.wait()
+                delete_the_file('router_logging.sh')
+                router_logging_handler = open('router_logging.sh', 'a')
+                router_logging_handler.write(router_logging_sh
+                                             .format(tenant_id + 'sr',
+                                                     ifdb_ip))
+                router_logging_handler.close()
+                q = Popen('ansible-playbook router_logging.yml -i {0} --extra-vars netns_name={1}'
+                          .format('inventory.ini',
+                                  tenant_id + 'sr'),
+                          shell=True)
+                (output, err) = q.communicate()
+                q.wait()
+                print(output)
                 monitoring_data['Traffic Monitoring'] = False
             collectd_file_handler.close()
             temp = vm_ip + ' ' + inventory_common_data + '\n'

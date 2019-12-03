@@ -1,0 +1,20 @@
+---
+- hosts: zones
+  user: root
+  become_method: sudo
+  become: yes
+  tasks:
+  - name: Add the iptables rule on the Subnet router
+    shell: |
+      ip netns exec {{ item }} iptables -F INPUT
+      ip netns exec {{ item }} iptables -A INPUT -p tcp -m comment --comment "TRAFFIC" -j ACCEPT
+    with_items: "{{ netns_name }}"
+  - name:
+    copy:
+      src: router_logging.sh
+      dest: /home/router_logging/
+  - name: Setup cron to monitor the tenant router
+    cron:
+      name: Send iptables count to IFDB every minute
+      job: sh /home/router_logging/router_logging.sh >/dev/null 2>&1
+      
