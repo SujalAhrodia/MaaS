@@ -4,8 +4,6 @@
   become: yes
 
   tasks:  
-  # - debug:
-  #     msg: "{{tid}} {{z1_host}}/30 {{z1_subnet}} {{z1_nid}} {{z2_host}} {{z2_subnet}} {{z2_nid}}"
   - name: Create a namespace(subnet router)
     command: ip netns add "{{tid}}sr"
 
