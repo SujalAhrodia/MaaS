@@ -13,7 +13,7 @@
   - name: Add interface to subnet namespace 
     command: ip link set {{tid}}sr_h netns {{tid}}sr
 
-  - name: Up the Tenant iterface
+  - name: Up the Tenant interface
     command: ip netns exec {{tid}}sr ip link set dev {{tid}}sr_h up  
 
   - name: Up the interface on the hypervisor
@@ -55,6 +55,7 @@
       - ip netns exec {{tid}}sr ip tunnel add gre1 mode gre local {{z2_subnet}} remote {{z1_subnet}}
       - ip netns exec {{tid}}sr ip link set dev gre1 up
       - ip netns exec {{tid}}sr ip addr add 1.1.1.2/30 dev gre1
+      - 
     when: '"172.16.3.1" not in ansible_all_ipv4_addresses'
 
   - name: Add routes for Zone 1
@@ -64,4 +65,9 @@
   - name: Add routes for Zone2
     command: ip route add {{z1_nid}} dev ens4 via 172.16.3.1
     when: '"172.16.3.1" not in ansible_all_ipv4_addresses'
+
+  - name: NAT rule on Zone1
+    command: ip netns exec {{tid}}sr iptables -t nat -I POSTROUTING -o {{tid}}sr_h ! -d {{z2_nid}} -j MASQUERADE
+    when: '"172.16.3.2" not in ansible_all_ipv4_addresses'
+
 
