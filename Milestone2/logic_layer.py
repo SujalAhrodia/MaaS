@@ -1,12 +1,14 @@
 import json
 import subprocess
 import libvirt
+from create_interface import attach_interface
 
 replace_flag=False
 filename='Testing.json'
 tenant=filename[:-5]
 tenant_list=[]
 zones={'1':['zone1','176.16.3.1'],'2':['zone2','176.16.3.2']}
+print(zones)
 
 def create_tenant_id():
     import glob
@@ -110,13 +112,12 @@ def create_vpc(replace_flag,tenant):
                     if val[s_ref]!=0:
                         count+=1
                 sn_octets=subnet.split('.')
-                prefix='.'.join(s for s in sn_octets[:-1]) + '.'
-                ip=subnet+str(count)
-
-
-
-
-
+                ip='.'.join(s for s in sn_octets[:-1]) + '.'+str(count)
+                print(ip)
+                state_data[key][s_ref]=ip
+                mgmt_ip = attach_interface(vm_id,tenant_id,subnet_map[subnet],ip,zones[val[0]][0],first_flag)
+                state_data[key][1] = mgmt_ip
+        print(state_data)
 
 
 if __name__=='__main__':
