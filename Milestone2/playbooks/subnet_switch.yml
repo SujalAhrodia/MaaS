@@ -58,6 +58,9 @@
   - name: Add interface to subnet namespace 
     command: ip link set vxlanbr_{{tid}}{{snid}}br netns {{tid}}{{snid}}
 
+  - name: Add interface to vxlanbr
+    command: ip netns exec {{tid}}{{snid}} brctl addif vxlanbr vxlanbr_{{tid}}{{snid}}br
+
   - name: Up the Tenant interface
     command: ip netns exec {{tid}}{{snid}} ip link set dev vxlanbr_{{tid}}{{snid}}br up  
 
