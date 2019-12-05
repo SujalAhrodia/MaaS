@@ -1,9 +1,0 @@
----
-# Configuration File
-
-zone1_SR: 20.0.0
-zone2_SR: 21.0.0
-zone1_TR: 22.0.0
-zone2_TR: 23.0.0
-zone1_TR_subnet: 1
-zone2_TR_subnet: 254
