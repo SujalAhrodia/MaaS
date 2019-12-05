@@ -6,7 +6,6 @@ from create_interface import attach_interface
 
 replace_flag = False
 filename = 'Testing.json'
-tenant = filename[:-5]
 tenant_list = []
 zones = {'1': ['zone1', '172.16.3.1'], '2': ['zone2', '172.16.3.2']}
 print(zones)
@@ -74,7 +73,8 @@ def create_vm(vm_id, zone_id, flag):
     #(out,error)=ansible_proc.communicate()
 
 
-def create_vpc(replace_flag, tenant):
+def create_vpc(replace_flag, filename):
+    tenant = filename[:-5]
     if not replace_flag:
         print('New tenant')
         sr_process = subprocess.Popen(
@@ -150,5 +150,5 @@ def create_vpc(replace_flag, tenant):
         return output_filename
     
 if __name__ == '__main__':
-    output_filename=create_vpc(replace_flag, tenant)
+    output_filename=create_vpc(replace_flag, filename)
     #parse_input_json(output_filename) 
