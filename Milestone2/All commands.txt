@@ -243,6 +243,38 @@ To research: How to remove an iP from either dhcpd or dnsmasq
 
 Plays Needed:
     SR Generation (per tenant)
-        #TID
+        # TID
+        # Smaller IP address 99.0.0.x/24
         -> Create NS
         -> Add Interface
+        -> Create GRE Tunnel
+    Subnet Switch (per subnet)
+        # TID
+        # SID
+        # ip addresses
+            # Prefix
+        -> create ns
+        -> Add Interface
+        -> Create Bridge
+        -> Create virt network
+        -> Create VXLAN
+        -> Add MASQ in SR
+        -> Add GRE Routing rules in SR
+    Spawn VM
+        # VMID
+        # Zone <IP|ID>
+        -> clone VM in the correct zone
+
+    Attach Interface
+        # VMID
+        # SNID
+        # IP of VM in that subnet
+            # Pull list of all VMs in that subnet from the stored state json
+            # add 1 to that.
+        -> SSH into Zone
+        -> Get the management IP
+        -> virsh-attach interface with interface name
+        -> Pull the mac for that interface
+        -> SSH into the VM
+        -> Pull the interface name
+        -> Add IP to that interface
