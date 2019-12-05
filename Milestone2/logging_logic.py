@@ -122,24 +122,29 @@ def parse_input_json(input_data):
                                              .format(tenant_id + 'sr',
                                                      ifdb_ip))
                 router_logging_handler.close()
-                q = Popen('ansible-playbook router_logging.yml -i {0} --extra-vars netns_name={1}'
+                print('ansible-playbook router_logging.yml -i {0} --extra-vars netns_name={1}'
                           .format('inventory.ini',
-                                  tenant_id + 'sr'),
-                          shell=True)
-                (output, err) = q.communicate()
-                q.wait()
-                print(output)
+                                  tenant_id + 'sr'))
+                # q = Popen('ansible-playbook router_logging.yml -i {0} --extra-vars netns_name={1}'
+                #           .format('inventory.ini',
+                #                   tenant_id + 'sr'),
+                #           shell=True)
+                # (output, err) = q.communicate()
+                # q.wait()
+                # print(output)
                 monitoring_data['Traffic Monitoring'] = False
             collectd_file_handler.close()
             temp = vm_ip + ' ' + inventory_common_data + '\n'
             inventory_file_handler.write(temp)
             inventory_file_handler.close()
-            p = Popen('ansible-playbook setup_collectd.yml -i {0} --extra-vars collectd_file={1}'
-                      .format(inventory_file_name, vm_collectd_file_name),
-                      shell=True)
-            (output, err) = p.communicate()
-            p.wait()
-            print(output)
+            print('ansible-playbook setup_collectd.yml -i {0} --extra-vars collectd_file={1}'
+                      .format(inventory_file_name, vm_collectd_file_name))
+            # p = Popen('ansible-playbook setup_collectd.yml -i {0} --extra-vars collectd_file={1}'
+            #           .format(inventory_file_name, vm_collectd_file_name),
+            #           shell=True)
+            # (output, err) = p.communicate()
+            # p.wait()
+            # print(output)
     else:
         print('Tenant has chosen not to enable monitoring')
 
