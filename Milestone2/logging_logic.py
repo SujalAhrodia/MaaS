@@ -3,19 +3,7 @@
 import json
 from subprocess import Popen
 
-mock_input_data = {
-    'Tenant1': {
-        'Monitoring': True,
-        'CPU': True,
-        'Memory': True,
-        'Interface': False,
-        'Traffic Monitoring': True,
-        'Custom': {
-            'flag': True,
-            'file': 'filename'
-        }
-    }
-}
+filename = 'Testing-t-1.json'
 
 
 monitoring_basic_data = '''
@@ -173,4 +161,4 @@ def delete_the_file(file_name):
 
 
 if __name__ == '__main__':
-    parse_input_json(mock_input_data)
+    parse_input_json(filename)
