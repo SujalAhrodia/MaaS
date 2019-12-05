@@ -6,7 +6,7 @@
   tasks:
   - name: Update 'keepalived.conf'
     copy:
-      src: ./"{{keepalived_conf}}"
+      src: ./{{keepalived_conf}}
       dest: /etc/keepalived/keepalived.conf
       owner: root
       mode: '0644'
@@ -18,10 +18,10 @@
 
   - name: Add backup script
     copy:
-      src: ./"{{backup_sh}}"
+      src: ./{{backup_sh}}
       dest: /opt/backup.sh
       owner: root
-      mode: '0644'
+      mode: '0777'
     
   - name: Check file exists 
     stat:
@@ -64,7 +64,7 @@
   - name: Copy ssh key
     copy:
       src: ./fetched/id_rsa.pub
-      dest: /root/.ssh/id_rsa.pub
+      dest: /etc/ssh/id_rsa.pub
       owner: root
       mode: '0644'
   
@@ -74,7 +74,9 @@
       state: touch
 
   - name: Set authorized key
-    shell: cat /root/.ssh/id_rsa.pub >> /root/.ssh/authorized_keys
+    shell: cat /etc/ssh/id_rsa.pub > /root/.ssh/authorized_keys
 
 
-  # 'ansible-playbook -i {0} ifdbconf.yml --extra-vars "keepalived_conf={1}, backup_sh={2}"' \.format(inventory_file_name, 'keepalived.conf', 'backup.sh')
+  # 'ansible-playbook -i {0} ifdbconf.yml --extra-vars "keepalived_conf={1}, backup_sh={2}"' \.format(inventory_file_name, 'keepaliveslave.conf', 'backupslave.sh')
+
+  # ansible-playbook ifdbconf.yml -i test.ini --extra-vars "keepalived_conf= keepaliveslave.conf backup_sh= backupslave.sh"
