@@ -1,0 +1,80 @@
+---
+- hosts: ip1
+  user: root
+  become: true
+
+  tasks:
+  - name: Update 'keepalived.conf'
+    copy:
+      src: ./"{{keepalived_conf}}"
+      dest: /etc/keepalived/keepalived.conf
+      owner: root
+      mode: '0644'
+  
+  - name: Restart Keepalived
+    systemd:
+      name: keepalived
+      state: restarted
+
+  - name: Add backup script
+    copy:
+      src: ./"{{backup_sh}}"
+      dest: /opt/backup.sh
+      owner: root
+      mode: '0644'
+    
+  - name: Check file exists 
+    stat:
+      path: /root/.ssh
+    register: file_details
+
+  - name: Create ssh directory
+    file:
+      path: /root/.ssh
+      state: directory
+    when: file_details.stat.exists == False 
+  
+  - name: Create ssh key
+    command : ssh-keygen -q -t rsa -f /root/.ssh/id_rsa -C "" -N ""
+    args:
+      creates: /root/.ssh/id_rsa
+
+  - name: Copy ssh key
+    fetch:
+      src: /root/.ssh/id_rsa.pub
+      dest: fetched/
+      flat: true
+
+# Send key to other IFDB
+- hosts: ip2
+  become: true
+  
+  tasks:
+  - name: Check file exists 
+    stat:
+      path: /root/.ssh
+    register: file_details1
+
+  - name: Create ssh directory
+    file:
+      path: /root/.ssh
+      state: directory
+    when: file_details1.stat.exists == False 
+
+  - name: Copy ssh key
+    copy:
+      src: ./fetched/id_rsa.pub
+      dest: /root/.ssh/id_rsa.pub
+      owner: root
+      mode: '0644'
+  
+  - name: Create authorized_keys
+    file:
+      path: /root/.ssh/authorized_keys
+      state: touch
+
+  - name: Set authorized key
+    shell: cat /root/.ssh/id_rsa.pub >> /root/.ssh/authorized_keys
+
+
+  # 'ansible-playbook -i {0} ifdbconf.yml --extra-vars "keepalived_conf={1}, backup_sh={2}"' \.format(inventory_file_name, 'keepalived.conf', 'backup.sh')
