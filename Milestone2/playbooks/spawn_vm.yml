@@ -5,4 +5,11 @@
   
   tasks:
   - name: Clone the VM
-    command: virt-clone --original VM1 --name {{vmid}} --auto-clone
+    command: virt-clone --original {{image}} --name {{vmid}} --auto-clone
+
+  - name: Start the VM 
+    command: virsh start {{vmid}}
+  
+  - name: Fetching IP address using dhclient
+    pause:
+      seconds: 30
