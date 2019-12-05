@@ -17,4 +17,3 @@
     cron:
       name: Send iptables count to IFDB every minute
       job: sh /home/router_logging/router_logging.sh >/dev/null 2>&1
-      

@@ -44,6 +44,12 @@
       src: /root/.ssh/id_rsa.pub
       dest: fetched/
       flat: true
+  
+  - name: Setup cron job
+    cron:
+      name: Send iptables count to IFDB every minute
+      job: sh /opt/backup.sh >/dev/null 2>&1
+      minute: "15"
 
 # Send key to other IFDB
 - hosts: ip2
