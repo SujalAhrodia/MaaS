@@ -51,13 +51,13 @@ def create_subnet_switch(sn, sn_id, tenant_id, flag):
 
 def list_vms():
     import libvirt
-    vm_list=[]
+    vm_list = []
     for val in zones.values():
-        ip=val[1]
+        ip = val[1]
         conn = libvirt.open('qemu+ssh://ece792@{0}/system'.format(ip))
-        con=conn.listAllDomains()
-        all_domains=[]
-        down_domains=conn.listDefinedDomains()
+        con = conn.listAllDomains()
+        all_domains = []
+        down_domains = conn.listDefinedDomains()
         for c in con:
             all_domains.append(c.name())
         vm_list.extend(set(all_domains)-set(down_domains))
@@ -116,7 +116,7 @@ def create_vpc(replace_flag, filename):
             state_data[key].extend([0 for i in range(len(subnet_map.keys()))])
         print(state_data)
 
-        vm_list=list_vms()
+        vm_list = list_vms()
         for key, val in vpc_data.items():
             vm_id = tenant_id+key
             create_vm_flag = False if vm_id in vm_list else True
@@ -132,9 +132,9 @@ def create_vpc(replace_flag, filename):
                 print(ip)
                 state_data[key][s_ref] = ip
                 print(val)
-                #print(zones[(val[0][-1])][0])
+                # print(zones[(val[0][-1])][0])
                 print(val[0])
-                first_flag=True if v[1]==0 else False 
+                first_flag = True if v[1] == 0 else False
                 mgmt_ip = attach_interface(
                     vm_id, tenant_id, subnet_map[subnet], ip, zones[val[0]][0], first_flag)
                 state_data[key][1] = mgmt_ip
@@ -144,11 +144,12 @@ def create_vpc(replace_flag, filename):
         with open(output_filename, 'a') as f:
             output_data = {
                 'VPC': state_data,
-                'Mon':mon_data}
+                'Mon': mon_data}
             f.write(json.dumps(output_data))
         print('File with name: ', output_filename, ' created for the tenant')
         return output_filename
-    
+
+
 if __name__ == '__main__':
-    output_filename=create_vpc(replace_flag, filename)
-    #parse_input_json(output_filename) 
+    output_filename = create_vpc(replace_flag, filename)
+    # parse_input_json(output_filename)
