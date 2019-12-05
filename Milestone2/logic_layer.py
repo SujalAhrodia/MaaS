@@ -69,7 +69,7 @@ def create_vm(vm_id, zone_id, flag):
     if not flag:
         return
     zone = zones[zone_id][0]
-    #ansible_proc=subprocess.Popen('ansible-playbook {0} spawn_vm.yml --extra-vars "vmid={1}"'.format(zone, vm_id),stdout=subprocess.PIPE,shell=True)
+    #ansible_proc=subprocess.Popen('ansible-playbook {0} spawn_vm.yml --extra-vars "vmid={1}, image=VM1"'.format(zone, vm_id),stdout=subprocess.PIPE,shell=True)
     #(out,error)=ansible_proc.communicate()
 
 
@@ -144,13 +144,14 @@ def create_vpc(replace_flag, filename):
         output_filename = tenant + '-' + tenant_id + '.json'
         with open(output_filename, 'a') as f:
             output_data = {
+                'Subnets': subnet_map,
                 'VPC': state_data,
-                'Mon': mon_data}
+                'Monitoring': mon_data}
             f.write(json.dumps(output_data))
         print('File with name: ', output_filename, ' created for the tenant')
+        parse_input_json(output_filename)
         return output_filename
 
 
 if __name__ == '__main__':
     output_filename = create_vpc(replace_flag, filename)
-    # parse_input_json(output_filename)

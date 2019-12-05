@@ -128,6 +128,7 @@ def main():
             Traffic_Monitoring = False if input("\t\tY/N: ").lower() != 'y' else True
             print("\tDo you want to Add a Custom monitoring script?")
             flag = False if input("\t\tY/N: ").lower() != 'y' else True
+            file = ''
             if flag:
                 print("\t\tEnter the filename for the custom script")
                 file = str(input("\t\t\tScript name: "))
