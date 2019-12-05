@@ -1,8 +1,0 @@
----
-- hosts: all
-  user: root
-  become: yes
-  
-  tasks:
-  - name: Clone the VM
-    command: virt-clone --original VM1 --name {{vmid}} --auto-clone
