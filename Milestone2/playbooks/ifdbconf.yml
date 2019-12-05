@@ -6,15 +6,20 @@
   tasks:
   - name: Update 'keepalived.conf'
     copy:
-      src: ./keepalived_conf
-      dest: /etc/keepalived/keepalived_conf
+      src: ./"{{keepalived_conf}}"
+      dest: /etc/keepalived/keepalived.conf
       owner: root
       mode: '0644'
+  
+  - name: Restart Keepalived
+    systemd:
+      name: keepalived
+      state: restarted
 
   - name: Add backup script
     copy:
-      src: ./backup_sh
-      dest: /opt/backup_sh
+      src: ./"{{backup_sh}}"
+      dest: /opt/backup.sh
       owner: root
       mode: '0644'
     
@@ -71,5 +76,5 @@
   - name: Set authorized key
     shell: cat /root/.ssh/id_rsa.pub >> /root/.ssh/authorized_keys
 
-    
+
   # 'ansible-playbook -i {0} ifdbconf.yml --extra-vars "keepalived_conf={1}, backup_sh={2}"' \.format(inventory_file_name, 'keepalived.conf', 'backup.sh')
