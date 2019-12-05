@@ -24,29 +24,22 @@ service_data_format = {
 
 def get_tenant_vpc_file(Tenant_name):
     import glob
+    import re
     list_of_files = glob.glob("*.json")
     for items in list_of_files:
-        item = items.strip('*.json')
-        item = item.strip('-t-')
-        if Tenant_name == item:
+        item = items.strip('.json')
+        item = re.sub(r'-t-', '', item)
+        # print(Tenant_name)
+        # print(item[:-1])
+        if Tenant_name == item[:-1]:
             return list_of_files[list_of_files.index(items)]
     return 0
 
 
-def create_tenant_id():
-    import glob
-    list_of_files = glob.glob('*.json')
-    count = 0
-    for item in list_of_files:
-        if '-t' in item:
-            count += 1
-    return count + 1
-
-
-def create_json_file(Tenant_name, vm_dict, monitoring_dict, replace_flag):
+def create_json_file(Tenant_name, vm_dict={}, monitoring_dict={}, replace_flag=False):
     if replace_flag:
         print('Unsupported deployment ATM')
-        return (0, 1)
+        return 0, 1
     vpc_data = dict()
     vpc_data['VPC'] = dict()
     for key, value in vm_dict.items():
@@ -54,10 +47,10 @@ def create_json_file(Tenant_name, vm_dict, monitoring_dict, replace_flag):
     vpc_data['Monitoring'] = monitoring_dict
     import pprint
     pprint.pprint(vpc_data)
-    with open(Tenant_name + '.json', 'a') as f:
+    with open(Tenant_name + '.json', 'w') as f:
         import json
         f.write(json.dumps(vpc_data))
-    return (replace_flag, Tenant_name + '.json')
+    return replace_flag, Tenant_name + '.json'
 
 
 def main():
@@ -71,12 +64,11 @@ def main():
         replace_flag = str(input("Y/N:"))
         if replace_flag.lower() == 'n':
             print("Please rerun with a different Tenant Name")
-            return 1
         elif replace_flag.lower() == 'y':
             replace_flag = True
+            return (create_json_file(Tenant_name, replace_flag=replace_flag))
         else:
             print("Undefined Input")
-            return 1
     else:
         print("Enter the following details for the vpc")
         try:
@@ -136,11 +128,12 @@ def main():
             Traffic_Monitoring = False if input("\t\tY/N: ").lower() != 'y' else True
             print("\tDo you want to Add a Custom monitoring script?")
             flag = False if input("\t\tY/N: ").lower() != 'y' else True
-            print("\t\tEnter the filename for the custom script")
-            file = str(input("\t\t\tScript name: "))
-            if '.py' not in file:
-                flag = False
-                print('Script is not a python script. Rejecting and continuing...')
+            if flag:
+                print("\t\tEnter the filename for the custom script")
+                file = str(input("\t\t\tScript name: "))
+                if '.py' not in file:
+                    flag = False
+                    print('Script is not a python script. Rejecting and continuing...')
             mon_data = {
                 'flag': Monitoring,
                 'CPU': CPU,
@@ -160,11 +153,11 @@ def main():
 
 
 if __name__ == '__main__':
-    (replace_flag, filename) = main()
-    if filename == 1:
-        print("Error creating json. Try again")
-    # print(out)
+    replace_flag, filename = main()
     print(replace_flag)
     print(filename)
-    from logic_layer import create_vpc
-    create_vpc(replace_flag, filename)
+    if filename == 1:
+        print("Error creating json. Try again")
+    else:
+        from logic_layer import create_vpc
+        create_vpc(replace_flag, filename)
