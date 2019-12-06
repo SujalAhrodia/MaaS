@@ -116,7 +116,7 @@ def gen_backup_sh(virtual_ip, peer_ip):
     backup_sh = f'''
     #! /bin/bash
 
-    ip=$(ip a s |grep {virtual_ip}/24)
+    ip=$(ip a s |grep {virtual_ip})
 
     if [ -z "$ip" ]
     then
@@ -124,11 +124,11 @@ def gen_backup_sh(virtual_ip, peer_ip):
     else
     influxd backup -portable -database collectd ~/infdb_bak
     echo "I am the master"
-    scp -r ~/infdb_bak root@{peer_ip}:~/
-    ssh root@{peer_ip}  'curl -i -XPOST http://localhost:8086/query --data-urlencode "q=DROP DATABASE collectd" | influxd restore -portable ~/infdb_bak'
+    scp -o StrictHostKeyChecking=no -r ~/infdb_bak root@{peer_ip}:~/
+    ssh -o StrictHostKeyChecking=no root@{peer_ip}  'curl -i -XPOST http://localhost:8086/query --data-urlencode "q=DROP DATABASE collectd" | influxd restore -portable ~/infdb_bak'
     sleep 5
     echo Removing backup at slave
-    ssh root@{peer_ip} 'rm -rf ~/infdb_bak'
+    ssh -o StrictHostKeyChecking=no root@{peer_ip} 'rm -rf ~/infdb_bak'
     echo Removing backup at master
     rm -rf ~/infdb_bak
     fi

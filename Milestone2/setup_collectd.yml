@@ -19,6 +19,13 @@
       dest: /opt/custom_plugins/
     when: custom_file != "None"
   
+  - name: Cron to setup custom logging
+    cron:
+      name: Seting up the custom logging
+      job: "python /opt/custom_plugins/data.py > /dev/null 2>&1"
+      minutes: 1
+    when: custom_file != "None"
+
   - name: Restarting Collectd on the VM
     systemd:
       name: collectd

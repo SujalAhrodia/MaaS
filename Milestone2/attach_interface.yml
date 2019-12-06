@@ -21,5 +21,5 @@
     with_items:
       - "ip route del default"
       - "ip route add default dev '{{dev_name}}' via '{{gw_ip}}'"
-    when: "'{{ flag }}' is True"
+    when: flag == "True"
 
