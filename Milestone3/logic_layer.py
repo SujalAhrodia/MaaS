@@ -50,6 +50,7 @@ def create_subnet_switch(sn, sn_id, tenant_id, flag):
 
 
 def list_vms():
+    # Change for containers
     import libvirt
     vm_list = []
     for val in zones.values():
@@ -66,6 +67,7 @@ def list_vms():
 
 
 def create_vm(vm_id, zone_id, flag):
+    # Change for containers
     if not flag:
         return
     zone = zones[zone_id][0]

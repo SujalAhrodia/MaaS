@@ -278,3 +278,6 @@ Plays Needed:
         -> SSH into the VM
         -> Pull the interface name
         -> Add IP to that interface
+
+
+sudo docker run -itd --name test-client maas/client bash

@@ -1,0 +1,15 @@
+---
+- hosts: all
+  user: root
+  become: yes
+  
+  tasks:
+  - name: Clone the VM
+    command: virt-clone --original {{image}} --name {{vmid}} --auto-clone
+
+  - name: Start the VM 
+    command: virsh start {{vmid}}
+  
+  - name: Fetching IP address using dhclient
+    pause:
+      seconds: 35

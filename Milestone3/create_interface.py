@@ -1,17 +1,13 @@
 import paramiko
-
 zones = {'zone1': ['172.16.3.1', 'linux@1234'],
          'zone2': ['172.16.3.2', 'linux@123']}
-
 
 def create_ssh_conn(ip, user, pwd):
     '''
     SSH Handler to creat an SSHClient object
-
     Args:   ip (string)
             user (string)
             pwd (string)
-
     Returns: client (object) : paramiko client object
     '''
     client = paramiko.SSHClient()
@@ -70,7 +66,6 @@ def attach_interface(vm_id, tenant_id, subnet, ip, zone_id, route_flag):
         return addr
     except Exception:
         return -1
-
 
 if __name__ == '__main__':
     attach_interface('q3VM1', 'q3br_', 'net', '11.11.91.12', 'zone2')
