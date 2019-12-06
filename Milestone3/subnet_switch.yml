@@ -1,0 +1,90 @@
+---
+- hosts: zones
+  user: root
+  become: yes
+  
+  tasks:  
+  - name: Create a namespace(subnet switch)
+    command: ip netns add "{{tid}}{{snid}}"
+
+  - name: Add veth pair 
+    command: ip link add {{tid}}{{snid}}_{{tid}}sr type veth peer name {{tid}}sr_{{tid}}{{snid}}
+    
+  - name: Send interface to namespace(router)
+    command: ip link set {{tid}}sr_{{tid}}{{snid}} netns {{tid}}sr
+  
+  - name: Send interface to namespace(switch)
+    command: ip link set {{tid}}{{snid}}_{{tid}}sr netns {{tid}}{{snid}}
+
+  - name: Up the interfaces
+    command: "{{item}}"
+    with_items:
+      - ip netns exec {{tid}}{{snid}} ip link set dev {{tid}}{{snid}}_{{tid}}sr up
+      - ip netns exec {{tid}}sr ip link set dev {{tid}}sr_{{tid}}{{snid}} up
+  
+  - name: Add VXLAN bridges
+    command: "ip netns exec {{tid}}{{snid}} {{item}}"
+    with_items:
+      - brctl addbr vxbr
+      - ip link set dev vxbr up
+
+# Zone1
+  - name: Add Ip and route between tsn_tsr Zone1
+    command: "{{item}}"
+    with_items:
+      - ip netns exec {{tid}}{{snid}} ip addr add {{prefix}}.250/30 dev {{tid}}{{snid}}_{{tid}}sr
+      - ip netns exec {{tid}}sr ip addr add {{prefix}}.249/30 dev {{tid}}sr_{{tid}}{{snid}}
+      - ip netns exec {{tid}}{{snid}} ip route add default via {{prefix}}.249 dev {{tid}}{{snid}}_{{tid}}sr
+    when: '"172.16.3.2" not in ansible_all_ipv4_addresses'
+
+  - name: Adding gateway for vxlanbr in Zone1
+    command: "ip netns exec {{tid}}{{snid}} {{item}}"
+    with_items:
+      - ip link add {{tid}}{{snid}}_vxbr type veth peer name vxbr_{{tid}}{{snid}}
+      - ip link set dev {{tid}}{{snid}}_vxbr up
+      - brctl addif vxbr vxbr_{{tid}}{{snid}}
+      - ip link set dev vxbr_{{tid}}{{snid}} up
+      - ip addr add {{prefix}}.1/25 dev {{tid}}{{snid}}_vxbr
+    when: '"172.16.3.2" not in ansible_all_ipv4_addresses'
+
+  - name: Adding vxlan interface in Zone1
+    command: "ip netns exec {{tid}}{{snid}} {{item}}"
+    with_items:
+      - ip link add vx0 type vxlan id 420 dstport 4789 local {{prefix}}.250
+      - ip link set vx0 up
+      - brctl addif vxbr vx0
+      - bridge fdb append 00:00:00:00:00:00 dev vx0 dst {{prefix}}.254
+    when: '"172.16.3.2" not in ansible_all_ipv4_addresses'
+    tags: test
+
+  - name: GRE routing in Zone1
+    command: "ip netns exec {{tid}}sr {{item}}"
+    with_items:
+      - ip route add {{prefix}}.252/30 dev gre1 via 1.1.1.2
+      - ip route add {{prefix}}.0/25 dev {{tid}}sr_{{tid}}{{snid}} via {{prefix}}.250
+    when: '"172.16.3.2" not in ansible_all_ipv4_addresses'
+    tags: test
+
+# Zone2
+  - name: Add Ip and route between tsn_tsr Zone2
+    command: "{{item}}"
+    with_items:
+      - ip netns exec {{tid}}{{snid}} ip addr add {{prefix}}.254/30 dev {{tid}}{{snid}}_{{tid}}sr
+      - ip netns exec {{tid}}sr ip addr add {{prefix}}.253/30 dev {{tid}}sr_{{tid}}{{snid}}
+      - ip netns exec {{tid}}{{snid}} ip route add default via {{prefix}}.253 dev {{tid}}{{snid}}_{{tid}}sr
+    when: '"172.16.3.1" not in ansible_all_ipv4_addresses'
+    
+  - name: Adding vxlan interface in Zone2
+    command: "ip netns exec {{tid}}{{snid}} {{item}}"
+    with_items:
+      - ip link add vx0 type vxlan id 420 dstport 4789 local {{prefix}}.254
+      - ip link set vx0 up
+      - brctl addif vxbr vx0
+      - bridge fdb append 00:00:00:00:00:00 dev vx0 dst {{prefix}}.250
+    when: '"172.16.3.1" not in ansible_all_ipv4_addresses'
+    tags: test
+
+  - name: GRE routing in Zone2
+    command: ip netns exec {{tid}}sr ip route add {{prefix}}.248/30 dev gre1 via 1.1.1.1
+    when: '"172.16.3.1" not in ansible_all_ipv4_addresses'
+    tags: test
