@@ -1,0 +1,31 @@
+---
+- hosts: zone
+  user: root
+  become_method: sudo
+  become: yes
+  tasks:
+  - name: Create Veth pairs
+    command: ip link add {{tid}}{{vmid}}_vxbr type veth peer name vxbr_{{tid}}{{vmid}}
+
+  - name: Get pid of container
+    shell: docker inspect -f {{'{{.State.Pid}}'}} {{tid}}{{vmid}}
+    register: container_status
+  - debug: msg="{{container_status.stdout_lines}}"
+
+  - name: Send interface to subnet switch and container
+    command: "{{items}}"
+    with_items:
+      - ip link set vxbr_{{tid}}{{vmid}} netns {{tid}}{{snid}}
+      - ip link set {{tid}}{{vmid}}_vxbr netns {{container_status.stdout_lines}}
+  
+  - name: Set the interface in subnet switch to up and add to vxlanbr
+    command: ip netns exec {{tid}}{{snid}} "{{items}}"
+    with_items:
+      - ip link set dev vxbr_{{tid}}{{vmid}} up
+      - brtcl addif vxbr vxbr_{{tid}}{{vmid}}
+  
+  - name: Set the interface in container to up and add IP address
+    command: docker exec {{tid}}{{vmid}} "{{items}}"
+    with_items:
+      - ip link set dev {{tid}}{{vmid}}_vxbr up
+      - ip addr add {{ip_addr}}/25 dev {{tid}}{{vmid}}_vxbr
