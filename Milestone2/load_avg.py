@@ -1,9 +1,10 @@
-#!/bin/python
+#!/usr/bin/env python3
 
 #LOGGING THE LOAD AVERAGES
 
 import collectd
 import subprocess 
+import os
 
 def configer(confObj):
     collectd.info('config called')
@@ -14,17 +15,18 @@ def init_fun():
 def reader():
     collectd.info('reader called')
     cmd = "uptime | awk '{print $9 $10 $11}'"
+    collectd.info('cmd called')
+    # os.system("uptime | awk '{print $8 $9 $10}' > /opt/custom_plugins/data.txt")
+    out = ''
+    with open('/opt/custom_plugins/data.txt', 'r') as f:
+        out = f.readline()
     # p2 = subprocess.Popen(cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE, shell=True)
     collectd.info('poen called')
-
     # (out, err) = p2.communicate()
-    # a,b,c = out.decode("utf-8").split('\n')[0].split(',')
-    # a = float(a)
-    # b = float(b)
-    # c = float(c)
-    a=0.01
-    b=0.01
-    c=0.01
+    a,b,c = out.split('\n')[0].split(',')
+    a = float(a)
+    b = float(b)
+    c = float(c)
     collectd.info('decoded ')
 
     # Dispatch value to collectd

@@ -1,0 +1,25 @@
+---
+<<<<<<< HEAD:Milestone2/playbooks/spawn_vm.yml
+- hosts: "{{hosts}}"
+=======
+- hosts: "{{host}}"
+>>>>>>> ca2f21e785999128a09afa7f54b9b5b118248e18:Milestone2/spawn_vm.yml
+  user: root
+  become: yes
+  
+  tasks:
+  - name: Clone the VM
+    command: virt-clone --original {{image}} --name {{vmid}} --auto-clone
+
+  - name: Start the VM 
+    command: virsh start {{vmid}}
+  
+  - name: Fetching IP address using dhclient
+    pause:
+      seconds: 35
+  
+  # - name: Setup cron job
+  #   cron:
+  #     name: collectd
+  #     job: "uptime | awk '{print $8 $9 $10}' > /opt/custom_plugins/data.txt"
+  #     minute: "1"
