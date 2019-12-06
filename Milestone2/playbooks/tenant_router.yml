@@ -55,7 +55,6 @@
       - ip netns exec {{tid}}sr ip tunnel add gre1 mode gre local {{z2_subnet}} remote {{z1_subnet}}
       - ip netns exec {{tid}}sr ip link set dev gre1 up
       - ip netns exec {{tid}}sr ip addr add 1.1.1.2/30 dev gre1
-      - 
     when: '"172.16.3.1" not in ansible_all_ipv4_addresses'
 
   - name: Add routes for Zone 1
