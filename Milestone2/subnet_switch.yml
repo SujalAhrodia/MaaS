@@ -25,8 +25,8 @@
   - name: Add VXLAN bridges
     command: "ip netns exec {{tid}}{{snid}} {{item}}"
     with_items:
-      - brctl addbr vxlanbr
-      - ip link set dev vxlanbr up
+      - brctl addbr vxbr
+      - ip link set dev vxbr up
   
   - name: Create Virsh network
     copy: 
@@ -53,22 +53,22 @@
       - ip link set dev {{tid}}{{snid}}br up
 
   - name: Add veth pair on hypervisor
-    command: ip link add {{tid}}{{snid}}br_vxlanbr type veth peer name vxlanbr_{{tid}}{{snid}}br
+    command: ip link add {{tid}}{{snid}}br_vxbr type veth peer name vxbr_{{tid}}{{snid}}br
     
   - name: Add interface to subnet namespace 
-    command: ip link set vxlanbr_{{tid}}{{snid}}br netns {{tid}}{{snid}}
+    command: ip link set vxbr_{{tid}}{{snid}}br netns {{tid}}{{snid}}
 
-  - name: Add interface to vxlanbr
-    command: ip netns exec {{tid}}{{snid}} brctl addif vxlanbr vxlanbr_{{tid}}{{snid}}br
+  - name: Add interface to vxbr
+    command: ip netns exec {{tid}}{{snid}} brctl addif vxbr vxbr_{{tid}}{{snid}}br
 
   - name: Up the Tenant interface
-    command: ip netns exec {{tid}}{{snid}} ip link set dev vxlanbr_{{tid}}{{snid}}br up  
+    command: ip netns exec {{tid}}{{snid}} ip link set dev vxbr_{{tid}}{{snid}}br up  
 
   - name: Add interface to bridge
     command: "{{item}}"
     with_items:
-      - ip link set dev {{tid}}{{snid}}br_vxlanbr up
-      - brctl addif {{tid}}{{snid}}br {{tid}}{{snid}}br_vxlanbr
+      - ip link set dev {{tid}}{{snid}}br_vxbr up
+      - brctl addif {{tid}}{{snid}}br {{tid}}{{snid}}br_vxbr
 
 # Zone1
   - name: Add Ip and route between tsn_tsr Zone1
@@ -82,20 +82,20 @@
   - name: Adding gateway for vxlanbr in Zone1
     command: "ip netns exec {{tid}}{{snid}} {{item}}"
     with_items:
-      - ip link add {{tid}}{{snid}}_vxlanbr type veth peer name vxlanbr_{{tid}}{{snid}}
-      - ip link set dev {{tid}}{{snid}}_vxlanbr up
-      - brctl addif vxlanbr vxlanbr_{{tid}}{{snid}}
-      - ip link set dev vxlanbr_{{tid}}{{snid}} up
-      - ip addr add {{prefix}}.1/25 dev {{tid}}{{snid}}_vxlanbr
+      - ip link add {{tid}}{{snid}}_vxbr type veth peer name vxbr_{{tid}}{{snid}}
+      - ip link set dev {{tid}}{{snid}}_vxbr up
+      - brctl addif vxbr vxbr_{{tid}}{{snid}}
+      - ip link set dev vxbr_{{tid}}{{snid}} up
+      - ip addr add {{prefix}}.1/25 dev {{tid}}{{snid}}_vxbr
     when: '"172.16.3.2" not in ansible_all_ipv4_addresses'
 
   - name: Adding vxlan interface in Zone1
     command: "ip netns exec {{tid}}{{snid}} {{item}}"
     with_items:
-      - ip link add vxlan0 type vxlan id 420 dstport 4789 local {{prefix}}.250
-      - ip link set vxlan0 up
-      - brctl addif vxlanbr vxlan0
-      - bridge fdb append 00:00:00:00:00:00 dev vxlan0 dst {{prefix}}.254
+      - ip link add vx0 type vxlan id 420 dstport 4789 local {{prefix}}.250
+      - ip link set vx0 up
+      - brctl addif vxbr vx0
+      - bridge fdb append 00:00:00:00:00:00 dev vx0 dst {{prefix}}.254
     when: '"172.16.3.2" not in ansible_all_ipv4_addresses'
     tags: test
 
@@ -119,10 +119,10 @@
   - name: Adding vxlan interface in Zone2
     command: "ip netns exec {{tid}}{{snid}} {{item}}"
     with_items:
-      - ip link add vxlan0 type vxlan id 420 dstport 4789 local {{prefix}}.254
-      - ip link set vxlan0 up
-      - brctl addif vxlanbr vxlan0
-      - bridge fdb append 00:00:00:00:00:00 dev vxlan0 dst {{prefix}}.250
+      - ip link add vx0 type vxlan id 420 dstport 4789 local {{prefix}}.254
+      - ip link set vx0 up
+      - brctl addif vxbr vx0
+      - bridge fdb append 00:00:00:00:00:00 dev vx0 dst {{prefix}}.250
     when: '"172.16.3.1" not in ansible_all_ipv4_addresses'
     tags: test
 

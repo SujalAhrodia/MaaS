@@ -1,0 +1,19 @@
+---
+- hosts: zone
+  user: root
+  become: yes
+  tasks:
+  - name: Attach the interface
+    shell: virsh attach-interface --domain {{vmid}} --type network --source {{network_name}} --model virtio --config --live
+    # when: "'172.16.3.1' in ansible_all_ipv4_addresses'" or "'172.16.3.2' in ansible_all_ipv4_addresses'"
+
+- hosts: tenant_vms
+  user: root
+  become: yes
+  tasks:
+  - name: Set the interface to up
+    shell: ip link set dev {{dev_name}} up
+  - name: Add the IP
+    shell: ip addr add {{ip_addr}}/25 dev {{dev_name}}
+    # when: "'172.16.3.1' not in ansible_all_ipv4_addresses'" or "'172.16.3.2' not in ansible_all_ipv4_addresses'"
+

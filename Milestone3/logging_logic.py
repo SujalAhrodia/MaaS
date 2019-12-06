@@ -65,7 +65,7 @@ custom_plugin_data = '''
 
 inventory_header = '[tenant_vms]\n'
 
-inventory_common_data = 'ansible_connection=ssh ansible_ssh_user=root ansible_ssh_pass=root'
+inventory_common_data = "ansible_connection=ssh ansible_ssh_user=root ansible_ssh_pass=root ansible_ssh_common_args='-o StrictHostKeyChecking=no'"
 
 router_logging_sh = '''
 count=$(sudo ip netns exec {0} iptables -nvL INPUT| grep TRAFFIC | awk '{{print $1}}')
@@ -293,24 +293,14 @@ def parse_input_json(filename):
             temp = vm_ip + ' ' + inventory_common_data + '\n'
             inventory_file_handler.write(temp)
             inventory_file_handler.close()
-            if mon_data['Custom']['flag']:
-                print('ansible-playbook setup_collectd.yml -i {0} --extra-vars collectd_file={1} custom_file={2}'
-                          .format(inventory_file_name, vm_collectd_file_name, mon_data['Custom']['file']))
-                # p = Popen('ansible-playbook setup_collectd.yml -i {0} --extra-vars collectd_file={1} custom_file={2}'
-                #           .format(inventory_file_name, vm_collectd_file_name, mon_data['Custom']['file']),
-                #           shell=True)
-                # (output, err) = p.communicate()
-                # p.wait()
-                # print(output)
-            else:
-                print('ansible-playbook setup_collectd.yml -i {0} --extra-vars collectd_file={1}'
-                          .format(inventory_file_name, vm_collectd_file_name))
-                # p = Popen('ansible-playbook setup_collectd.yml -i {0} --extra-vars collectd_file={1}'
-                #           .format(inventory_file_name, vm_collectd_file_name),
-                #           shell=True)
-                # (output, err) = p.communicate()
-                # p.wait()
-                # print(output)
+            print('ansible-playbook setup_collectd.yml -i {0} --extra-vars collectd_file={1}'
+                      .format(inventory_file_name, vm_collectd_file_name))
+            # p = Popen('ansible-playbook setup_collectd.yml -i {0} --extra-vars collectd_file={1}'
+            #           .format(inventory_file_name, vm_collectd_file_name),
+            #           shell=True)
+            # (output, err) = p.communicate()
+            # p.wait()
+            # print(output)
     else:
         print('Tenant has chosen not to enable monitoring')
 

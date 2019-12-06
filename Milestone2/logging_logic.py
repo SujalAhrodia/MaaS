@@ -65,7 +65,7 @@ custom_plugin_data = '''
 
 inventory_header = '[tenant_vms]\n'
 
-inventory_common_data = 'ansible_connection=ssh ansible_ssh_user=root ansible_ssh_pass=root'
+inventory_common_data = "ansible_connection=ssh ansible_ssh_user=root ansible_ssh_pass=root ansible_ssh_common_args='-o StrictHostKeyChecking=no'"
 
 router_logging_sh = '''
 count=$(sudo ip netns exec {0} iptables -nvL INPUT| grep TRAFFIC | awk '{{print $1}}')
