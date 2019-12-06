@@ -146,6 +146,7 @@ def create_vpc(replace_flag, filename):
                         count += 1
                 sn_octets = subnet.split('.')
                 ip = '.'.join(s for s in sn_octets[:-1]) + '.' + str(count)
+                net = '.'.join(s for s in sn_octets[:-1])
                 # print(ip)
                 state_data[key][s_ref] = ip
                 # print(val)
@@ -153,7 +154,7 @@ def create_vpc(replace_flag, filename):
                 # print(val[0])
                 # zone_ip = zones[vpc_data[key][0]][1]
                 first_flag = True if v[1] == 0 else False
-                os.system('ansible-playbook -i vminventory.ini attach_interface.yml --extra-vars "dev_name={0} ip_addr={1} vmid={2} network_name={3} host={4}"'.format(dev_name, ip, vm_id,'net_'+tenant_id+subnet_map[subnet] , zones[vpc_data[key][0]][0]))
+                os.system('ansible-playbook -i vminventory.ini attach_interface.yml --extra-vars "ip_net={0} ip_addr={1} vmid={2} tid={3} snid={4}"'.format(net, ip, key, tenant_id, subnet_map[subnet]))
                 state_data[key][1] = mgmt_ip
                 i += 1
         print(state_data)
