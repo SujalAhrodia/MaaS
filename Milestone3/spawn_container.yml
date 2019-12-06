@@ -4,9 +4,6 @@
   become: yes
   
   tasks:
-  - debug:
-      var: "{{ host }}"
-
   - pip:
       name: docker
       state: latest
