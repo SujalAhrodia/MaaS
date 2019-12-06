@@ -32,7 +32,7 @@ def create_tenant_subnet_router(tenant_id, flag):
     z2_host = "100.0.0." + str(last_octet)
     z2_subnet = "100.0.0." + str(last_octet + 1)
     print(z1_host, z1_subnet)
-    #ansible_proc=subprocess.Popen('ansible-playbook -i inventory.ini tenant_router.yml --extra-vars "z1_host={0},z1_subnet={1},z2_host={2},z2_subnet={3},tid={4},z1_nid={5},z2_nid={6}"'.format(z1_host,z1_subnet,z2_host,z2_subnet,tenant_id,z1_network_id,z2_network_id),stdout=subprocess.PIPE,shell=True)
+    #ansible_proc=subprocess.Popen('ansible-playbook -i inventory.ini tenant_router.yml --extra-vars "z1_host={0} z1_subnet={1} z2_host={2} z2_subnet={3} tid={4} z1_nid={5} z2_nid={6}"'.format(z1_host,z1_subnet,z2_host,z2_subnet,tenant_id,z1_network_id,z2_network_id),stdout=subprocess.PIPE,shell=True)
     #(out,error)=ansible_proc.communicate()
 
 
@@ -45,7 +45,7 @@ def create_subnet_switch(sn, sn_id, tenant_id, flag):
     print(prefix)
     last_octet = (4 * int(tenant_id[-1])) - 3
     z1_subnet = "99.0.0." + str(last_octet + 1)
-    #ansible_proc=subprocess.Popen('ansible-playbook -i inventory.ini subnet_switch.yml --extra-vars "tid={0},prefix={1},snid={2},z1_subnet={3}"'.format(tenant_id,prefix,sn_id,z1_subnet),stdout=subprocess.PIPE,shell=True)
+    #ansible_proc=subprocess.Popen('ansible-playbook -i inventory.ini subnet_switch.yml --extra-vars "tid={0} prefix={1} snid={2} z1_subnet={3}"'.format(tenant_id,prefix,sn_id,z1_subnet),stdout=subprocess.PIPE,shell=True)
     #(out,error)=ansible_proc.communicate()
 
 
@@ -69,7 +69,7 @@ def create_vm(vm_id, zone_id, flag):
     if not flag:
         return
     zone = zones[zone_id][0]
-    #ansible_proc=subprocess.Popen('ansible-playbook {0} spawn_vm.yml --extra-vars "vmid={1}, image=VM1"'.format(zone, vm_id),stdout=subprocess.PIPE,shell=True)
+    #ansible_proc=subprocess.Popen('ansible-playbook {0} spawn_vm.yml --extra-vars "vmid={1} image=VM1"'.format(zone, vm_id),stdout=subprocess.PIPE,shell=True)
     #(out,error)=ansible_proc.communicate()
 
 

@@ -147,7 +147,7 @@ def parse_input_json(filename):
         ifdb_slave = 'IFDB_' + tenant_id + '_bak'
         print(ifdb_master)
         print(ifdb_slave)
-        command = 'ansible-playbook {0} spawn_vm.yml --extra-vars "vmid={0}, image=goldenIFDB"'\
+        command = 'ansible-playbook {0} spawn_vm.yml --extra-vars "vmid={0} image=goldenIFDB"'\
                   .format('zone1', ifdb_master)
         print(command)
         # Run the inventory for creating the IFDB VMs
@@ -155,7 +155,7 @@ def parse_input_json(filename):
         #           shell=True)
         # (output, err) = q.communicate()
         # q.wait()
-        command = 'ansible-playbook {0} spawn_vm.yml --extra-vars "vmid={0}, image=goldenIFDB"'\
+        command = 'ansible-playbook {0} spawn_vm.yml --extra-vars "vmid={0} image=goldenIFDB"'\
                   .format('zone2', ifdb_slave)
         print(command)
         # Run the inventory for creating the IFDB VMs
@@ -168,7 +168,7 @@ def parse_input_json(filename):
         delete_the_file(inventory_file_name)
         inventory_file_handler = open(inventory_file_name, 'a')
         IFDB_IPs = ['192.168.123.13', '192.168.123.14']  # find_ifdb_ip(ifdb_master, ifdb_slave)
-        virtual_ip = '192.168.123.' + str(int(tenant_id[-1]) + 1)
+        virtual_ip = '192.168.123.' + str(int(tenant_id[-1]) + 1) + '/24'
         temp = '[ip1]\n' +\
             IFDB_IPs[0] + ' ' + inventory_common_data + '\n' +\
             "[ip2]\n" +\
@@ -187,7 +187,7 @@ def parse_input_json(filename):
         # print(backup_sh)
         with open('backup.sh', 'w') as f:
             f.write(backup_sh)
-        command = 'ansible-playbook -i {0} ifdbconf.yml --extra-vars "keepalived_conf={1}, backup_sh={2}"'\
+        command = 'ansible-playbook -i {0} ifdbconf.yml --extra-vars "keepalived_conf={1} backup_sh={2}"'\
                   .format(inventory_file_name, 'keepalived.conf', 'backup.sh')
         print(command)
         # Run the play for starting keepalived on the Master
@@ -218,7 +218,7 @@ def parse_input_json(filename):
         # print(backup_sh)
         with open('backup.sh', 'w') as f:
             f.write(backup_sh)
-        command = 'ansible-playbook -i {0} ifdbconf.yml --extra-vars "keepalived_conf={1}, backup_sh={2}"'\
+        command = 'ansible-playbook -i {0} ifdbconf.yml --extra-vars "keepalived_conf={1} backup_sh={2}"'\
                   .format(inventory_file_name, 'keepalived.conf', 'backup.sh')
         print(command)
         # Run the play for starting keepalived on the Slave
