@@ -57,13 +57,13 @@
       - ip netns exec {{tid}}sr ip addr add 1.1.1.2/30 dev gre1
     when: '"172.16.3.1" not in ansible_all_ipv4_addresses'
 
-  - name: Add routes for Zone 1
-    command: ip route add {{z2_nid}} dev ens4 via 172.16.3.2
-    when: '"172.16.3.2" not in ansible_all_ipv4_addresses'
+  # - name: Add routes for Zone 1
+  #   command: ip route add {{z2_nid}} dev ens4 via 172.16.3.2
+  #   when: '"172.16.3.2" not in ansible_all_ipv4_addresses'
 
-  - name: Add routes for Zone2
-    command: ip route add {{z1_nid}} dev ens4 via 172.16.3.1
-    when: '"172.16.3.1" not in ansible_all_ipv4_addresses'
+  # - name: Add routes for Zone2
+  #   command: ip route add {{z1_nid}} dev ens4 via 172.16.3.1
+  #   when: '"172.16.3.1" not in ansible_all_ipv4_addresses'
 
   - name: NAT rule on Zone1
     command: ip netns exec {{tid}}sr iptables -t nat -I POSTROUTING -o {{tid}}sr_h ! -d {{z2_nid}} -j MASQUERADE
