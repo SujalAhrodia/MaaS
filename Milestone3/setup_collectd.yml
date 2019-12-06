@@ -7,19 +7,18 @@
   - name: Copy the collectd.conf
     copy:
       src: "{{ item }}"
-      dest: /etc/collectd.conf
+      dest: /etc/collectd/collectd.conf
       owner: root
       mode: '0644'
     with_items:
       - "{{ collectd_file }}"
-  
   - name: Copy the custom script
-    copy:
-      src: "{{ custom_file }}"
-      dest: /opt/custom_plugins/
-    when: '"{{ custom_file }}" is defined'
-  
+      copy:
+        src: "{{ custom_file }}"
+        dest: /opt/custom_plugins/
+      when: "{{ custom_file }}" is defined
   - name: Restarting Collectd on the VM
-    systemd:
-      name: collectd
-      state: restarted
+    shell: "{{item}}"
+    with_items:
+     - "pkill collectd"
+     - "service collectd start"

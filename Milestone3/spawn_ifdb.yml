@@ -1,0 +1,28 @@
+---
+- hosts: "{{host}}"
+  user: root
+  become: yes
+  
+  tasks:
+  - pip:
+      name: docker
+      state: latest
+
+  - name: Spawn the container
+    docker_container:
+      name: "{{ vmid }}"
+      image: maas/ifdb
+      command: bash
+      state: started
+      interactive: yes
+      detach: yes
+      recreate: yes
+
+  - name: Start SSH
+    command: docker exec  "{{ vmid }}" service ssh start
+
+  - name: Start IFDB service
+    command: docker exec "{{ vmid }}" service influxdb start
+
+  - name: Start Grafana Service
+    command: docker exec "{{ vmid }}" service grafana-server start

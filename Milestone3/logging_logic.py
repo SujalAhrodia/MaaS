@@ -293,14 +293,24 @@ def parse_input_json(filename):
             temp = vm_ip + ' ' + inventory_common_data + '\n'
             inventory_file_handler.write(temp)
             inventory_file_handler.close()
-            print('ansible-playbook setup_collectd.yml -i {0} --extra-vars collectd_file={1}'
-                      .format(inventory_file_name, vm_collectd_file_name))
-            # p = Popen('ansible-playbook setup_collectd.yml -i {0} --extra-vars collectd_file={1}'
-            #           .format(inventory_file_name, vm_collectd_file_name),
-            #           shell=True)
-            # (output, err) = p.communicate()
-            # p.wait()
-            # print(output)
+            if mon_data['Custom']['flag']:
+                print('ansible-playbook setup_collectd.yml -i {0} --extra-vars collectd_file={1} custom_file={2}'
+                          .format(inventory_file_name, vm_collectd_file_name, mon_data['Custom']['file']))
+                # p = Popen('ansible-playbook setup_collectd.yml -i {0} --extra-vars collectd_file={1} custom_file={2}'
+                #           .format(inventory_file_name, vm_collectd_file_name, mon_data['Custom']['file']),
+                #           shell=True)
+                # (output, err) = p.communicate()
+                # p.wait()
+                # print(output)
+            else:
+                print('ansible-playbook setup_collectd.yml -i {0} --extra-vars collectd_file={1}'
+                          .format(inventory_file_name, vm_collectd_file_name))
+                # p = Popen('ansible-playbook setup_collectd.yml -i {0} --extra-vars collectd_file={1}'
+                #           .format(inventory_file_name, vm_collectd_file_name),
+                #           shell=True)
+                # (output, err) = p.communicate()
+                # p.wait()
+                # print(output)
     else:
         print('Tenant has chosen not to enable monitoring')
 

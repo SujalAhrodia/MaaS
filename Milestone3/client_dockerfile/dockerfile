@@ -1,0 +1,14 @@
+FROM ubuntu:18.04
+
+RUN apt-get update
+RUN apt-get -y upgrade
+RUN apt-get -y --no-install-recommends --no-install-suggests install iproute2
+RUN apt-get -y --no-install-recommends --no-install-suggests install ssh
+RUN apt-get -y --no-install-recommends --no-install-suggests install iptables
+RUN apt-get -y --no-install-recommends --no-install-suggests install iputils-ping
+RUN apt-get -y --no-install-recommends --no-install-suggests install nano
+RUN apt-get -y --no-install-recommends --no-install-suggests install tcpdump
+RUN apt-get -y --no-install-recommends --no-install-suggests install sudo
+RUN apt-get -y --no-install-recommends --no-install-suggests install collectd
+
+ADD sshd_config /etc/ssh/sshd_config
