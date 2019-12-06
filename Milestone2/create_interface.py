@@ -54,7 +54,7 @@ def attach_interface(vm_id, tenant_id, subnet, ip, zone_id, route_flag):
         mac = execute_command(zone_ssh, 'sudo virsh domiflist ' +
                               vm_id+' | grep '+vm_id+subnet+' | awk \'{print $5}\'')
         close_ssh_conn(zone_ssh)
-        vm_ssh = create_ssh_conn(addr, 'root', 'rootroot')
+        vm_ssh = create_ssh_conn(addr, 'root', 'root')
         dev_name = execute_command(vm_ssh, "ip -o  link | grep "+mac)
         print(mac, dev_name)
         dev_name = dev_name.split()[1][:-1]
