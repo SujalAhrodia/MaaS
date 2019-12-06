@@ -261,7 +261,7 @@ def parse_input_json(filename):
                 router_logging_handler = open(str(tenant_id) + 'router_logging.sh', 'w')
                 router_logging_handler.write(router_logging_sh
                                              .format(tenant_id + 'sr',
-                                                     ifdb_ip))
+                                                     ifdb_ip[:-3]))
                 router_logging_handler.close()
                 command = 'ansible-playbook router_logging.yml -i {0} --extra-vars "netns_name={1} router_sh={2}"'\
                     .format('inventory.ini',
