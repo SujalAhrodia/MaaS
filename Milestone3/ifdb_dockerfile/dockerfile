@@ -1,20 +1,18 @@
-FROM ubuntu:18.04
+FROM philhawthorne/docker-influxdb-grafana:latest
 
 RUN apt-get update
-RUN apt-get -y --allow install iproute2
-RUN apt-get -y --allow install openssh-server
-RUN apt-get -y --allow install iptables
-RUN apt-get -y --allow install iputils-ping
-RUN apt-get -y --allow install vim
-RUN apt-get -y --allow install tcpdump
-RUN apt-get -y --allow install influxdb
-RUN apt-get -y --allow install keepalived
-
-RUN wget -q -O - https://packages.grafana.com/gpg.key | apt-key add -
-RUN apt-get update
-RUN apt-get -y --allow install grafana
+RUN apt-get -y upgrade
+RUN apt-get -y --no-install-recommends --no-install-suggests install iproute2
+RUN apt-get -y --no-install-recommends --no-install-suggests install openssh-server
+RUN apt-get -y --no-install-recommends --no-install-suggests install iptables
+RUN apt-get -y --no-install-recommends --no-install-suggests install iputils-ping
+RUN apt-get -y --no-install-recommends --no-install-suggests install nano
+RUN apt-get -y --no-install-recommends --no-install-suggests install tcpdump
+RUN apt-get -y --no-install-recommends --no-install-suggests install influxdb
+RUN apt-get -y --no-install-recommends --no-install-suggests install keepalived
 
 ADD grafana.ini /root/collect_capture.py
 ADD datasources.yaml /etc/grafana/provisioning/datasources/datasources.yaml
 ADD influxdb.conf /etc/influxdb/influxdb.conf
 ADD types.db /usr/local/share/collectd/types.db
+ADD sshd_config /etc/ssh/sshd_config
