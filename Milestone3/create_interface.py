@@ -1,5 +1,4 @@
 import paramiko
-
 zones = {'zone1': ['172.16.3.1', 'linux@1234'],
          'zone2': ['172.16.3.2', 'linux@123']}
 
