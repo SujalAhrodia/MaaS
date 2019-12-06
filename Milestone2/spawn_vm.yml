@@ -1,5 +1,5 @@
 ---
-- hosts: all
+- hosts: "{{host}}"
   user: root
   become: yes
   
@@ -13,3 +13,9 @@
   - name: Fetching IP address using dhclient
     pause:
       seconds: 35
+  
+  # - name: Setup cron job
+  #   cron:
+  #     name: collectd
+  #     job: "uptime | awk '{print $8 $9 $10}' > /opt/custom_plugins/data.txt"
+  #     minute: "1"

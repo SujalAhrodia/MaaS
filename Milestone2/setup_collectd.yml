@@ -12,11 +12,13 @@
       mode: '0644'
     with_items:
       - "{{ collectd_file }}"
+  
   - name: Copy the custom script
-      copy:
-        src: "{{ custom_file }}"
-        dest: /opt/custom_plugins/
-      when: "{{ custom_file }}" is defined
+    copy:
+      src: "{{ custom_file }}"
+      dest: /opt/custom_plugins/
+    when: '"{{ custom_file }}" is defined'
+  
   - name: Restarting Collectd on the VM
     systemd:
       name: collectd
