@@ -2,6 +2,9 @@
 
 import json
 from subprocess import Popen
+import os
+
+zones = {'1': ['zone1', '172.16.3.1'], '2': ['zone2', '172.16.3.2']}
 
 filename = 'Testing-t-1.json'
 
@@ -79,7 +82,6 @@ def gen_keepalived_conf(state, m_ip, s_ip, prio, virtual_ip):
     keepalived_conf = f'''
     vrrp_script chk_influx {{
         script "pidof influxd"
-        script "pidof grafana-server"
         interval 2
     }}
 
@@ -108,6 +110,7 @@ def gen_keepalived_conf(state, m_ip, s_ip, prio, virtual_ip):
     }}
     '''
     return keepalived_conf
+
 
 def gen_backup_sh(virtual_ip, peer_ip):
     backup_sh = f'''
@@ -147,9 +150,9 @@ def parse_input_json(filename):
     # tenant_file = get_tenant_vpc_file(tenant_name)
     # print(tenant_file)
     # if tenant_file == 0:
-        # return 'Tenant File Not found. Looking for {}.json'.format(tenant_name)
+    # return 'Tenant File Not found. Looking for {}.json'.format(tenant_name)
     # with open(tenant_file, 'r') as f:
-        # vpc_data = json.loads(''.join(f.readlines()))
+    # vpc_data = json.loads(''.join(f.readlines()))
     # print(vpc_data)
     tenant_id = filename.split('-')[1] + '-' + filename.split('-')[2][:-5]
     if mon_data['flag']:
@@ -157,27 +160,25 @@ def parse_input_json(filename):
         ifdb_slave = 'IFDB_' + tenant_id + '_bak'
         print(ifdb_master)
         print(ifdb_slave)
-        command = 'ansible-playbook spawn_vm.yml --extra-vars "host={0} vmid={1} image=goldenIFDB"'\
-                  .format('zone1', ifdb_master)
-        print(command)
-        # Run the inventory for creating the IFDB VMs
-        # q = Popen(command,
-        #           shell=True)
-        # (output, err) = q.communicate()
-        # q.wait()
-        command = 'ansible-playbook spawn_vm.yml --extra-vars "host={0} vmid={1} image=goldenIFDB"'\
-                  .format('zone2', ifdb_slave)
-        print(command)
-        # Run the inventory for creating the IFDB VMs
-        # q = Popen(command,
-        #           shell=True)
-        # (output, err) = q.communicate()
-        # q.wait()
+        vm_list = list_vms()
+        if ifdb_master not in vm_list:
+            command = 'ansible-playbook spawn_vm.yml --extra-vars "host={0} vmid={1} image=goldenIFDB"'\
+                      .format('zone1', ifdb_master)
+            print(command)
+            # Run the inventory for creating the IFDB VMs
+            os.system(command)
+        if ifdb_slave not in vm_list:
+            command = 'ansible-playbook spawn_vm.yml --extra-vars "host={0} vmid={1} image=goldenIFDB"'\
+                      .format('zone2', ifdb_slave)
+            print(command)
+            # Run the inventory for creating the IFDB VMs
+            os.system(command)
         inventory_file_name = ifdb_master + '-inventory.ini'
         print(inventory_file_name)
         delete_the_file(inventory_file_name)
         inventory_file_handler = open(inventory_file_name, 'a')
-        IFDB_IPs = ['192.168.123.13', '192.168.123.14']  # find_ifdb_ip(ifdb_master, ifdb_slave)
+        IFDB_IPs = find_ifdb_ip(ifdb_master, ifdb_slave)
+        print(IFDB_IPs)
         virtual_ip = '192.168.123.' + str(int(tenant_id[-1]) + 1) + '/24'
         temp = '[ip1]\n' +\
             IFDB_IPs[0] + ' ' + inventory_common_data + '\n' +\
@@ -201,11 +202,7 @@ def parse_input_json(filename):
                   .format(inventory_file_name, 'keepalived.conf', 'backup.sh')
         print(command)
         # Run the play for starting keepalived on the Master
-        # q = Popen(command,
-        #           shell=True)
-        # (output, err) = q.communicate()
-        # q.wait()
-        delete_the_file(inventory_file_name)
+        os.system(command)
         inventory_file_name = ifdb_slave + '-inventory.ini'
         print(inventory_file_name)
         delete_the_file(inventory_file_name)
@@ -232,11 +229,7 @@ def parse_input_json(filename):
                   .format(inventory_file_name, 'keepalived.conf', 'backup.sh')
         print(command)
         # Run the play for starting keepalived on the Slave
-        # q = Popen(command,
-        #           shell=True)
-        # (output, err) = q.communicate()
-        # q.wait()
-        delete_the_file(inventory_file_name)
+        os.system(command)
         vpc_data['IFDB'] = IFDB_IPs[0]
         vpc_data['IFDB_bak'] = IFDB_IPs[1]
         vpc_data['Virtual IP'] = virtual_ip
@@ -244,10 +237,6 @@ def parse_input_json(filename):
         # Populate vpc_data with IFDB data + Virtual IPs
         ifdb_ip = vpc_data['Virtual IP']
         vm_id_list = [item for item in vpc_data.keys() if 'VM' in item]
-        inventory_file_name = tenant_id + '-inventory.ini'
-        delete_the_file(inventory_file_name)
-        inventory_file_handler = open(inventory_file_name, 'a')
-        inventory_file_handler.write(inventory_header)
         for vm in vm_id_list:
             vm_collectd_file_name = tenant_id + vm + '_collectd.conf'
             vm_ip = vpc_data[vm][1]
@@ -255,7 +244,7 @@ def parse_input_json(filename):
             collectd_file_handler = open(vm_collectd_file_name, 'a')
             # print(monitoring_basic_data.format(tenant_id + vm, ifdb_ip))
             collectd_file_handler.write(monitoring_basic_data
-                                        .format(tenant_id + vm, ifdb_ip))
+                                        .format(tenant_id + vm, ifdb_ip[:-3]))
             # print(aggregation_plugin_data)
             collectd_file_handler.write(aggregation_plugin_data)
             if mon_data['CPU']:
@@ -274,57 +263,78 @@ def parse_input_json(filename):
                                              .format(tenant_id + 'sr',
                                                      ifdb_ip))
                 router_logging_handler.close()
-                print('ansible-playbook router_logging.yml -i {0} --extra-vars netns_name={1} router_sh={2}'
-                      .format('inventory.ini',
-                              tenant_id + 'sr',
-                              str(tenant_id) + 'router_logging.sh'))
-                # q = Popen('ansible-playbook router_logging.yml -i {0} --extra-vars netns_name={1} router_sh={2}'
-                #           .format('inventory.ini',
-                #                   tenant_id + 'sr',
-                #                   str(tenant_id) + 'router_logging.sh'))),
-                #           shell=True)
-                # (output, err) = q.communicate()
-                # q.wait()
-                # print(output)
+                command = 'ansible-playbook router_logging.yml -i {0} --extra-vars "netns_name={1} router_sh={2}"'\
+                    .format('inventory.ini',
+                            tenant_id + 'sr',
+                            str(tenant_id) + 'router_logging.sh')
+                print(command)
+                os.system(command)
                 mon_data['Traffic_Monitoring'] = False
             if mon_data['Custom']['flag']:
                 collectd_file_handler.write(custom_plugin_data)
             collectd_file_handler.close()
+            inventory_file_name = tenant_id + '-inventory.ini'
+            delete_the_file(inventory_file_name)
+            inventory_file_handler = open(inventory_file_name, 'a')
+            inventory_file_handler.write(inventory_header)
             temp = vm_ip + ' ' + inventory_common_data + '\n'
             inventory_file_handler.write(temp)
             inventory_file_handler.close()
-            print('ansible-playbook setup_collectd.yml -i {0} --extra-vars collectd_file={1}'
-                      .format(inventory_file_name, vm_collectd_file_name))
-            # p = Popen('ansible-playbook setup_collectd.yml -i {0} --extra-vars collectd_file={1}'
-            #           .format(inventory_file_name, vm_collectd_file_name),
-            #           shell=True)
-            # (output, err) = p.communicate()
-            # p.wait()
-            # print(output)
+            if mon_data['Custom']['flag']:
+                command = 'ansible-playbook setup_collectd.yml -i {0} --extra-vars "collectd_file={1} custom_file={2}"'\
+                    .format(inventory_file_name, vm_collectd_file_name, mon_data['Custom']['file'])
+            else:
+                command = 'ansible-playbook setup_collectd.yml -i {0} --extra-vars "collectd_file={1} custom_file={2}"'\
+                    .format(inventory_file_name, vm_collectd_file_name, 'None')
+            print(command)
+            os.system(command)
     else:
         print('Tenant has chosen not to enable monitoring')
 
 
 def find_ifdb_ip(ifdb_master, ifdb_slave):
-    #Change for Containers
-    from create_interface import create_ssh_conn, execute_command, close_ssh_conn
-    zones = {'zone1': ['172.16.3.1', 'linux@1234'],
-             'zone2': ['172.16.3.2', 'linux@123']}
-    ifdb_m_conn = create_ssh_conn(zones['zone1'][0], 'ece792', zones['zone1'][1])
-    cmd = "sudo virsh domifaddr " + ifdb_master + "|awk 'FNR==3 {print $4}'"
-    print(cmd)
-    m_ip = execute_command(ifdb_m_conn, cmd).split('/')[0]
-    ifdb_s_conn = create_ssh_conn(zones['zone2'][0], 'ece792', zones['zone2'][1])
-    cmd = "sudo virsh domifaddr " + ifdb_slave + "|awk 'FNR==3 {print $4}'"
-    print(cmd)
-    s_ip = execute_command(ifdb_s_conn, cmd).split('/')[0]
-    return [m_ip, s_ip]
+    # Change for Containers
+    ifdb_mip = get_vm_ip('172.16.3.1', ifdb_master)
+    ifdb_sip = get_vm_ip('172.16.3.2', ifdb_slave)
+    return [ifdb_mip, ifdb_sip]
+
+
+def get_vm_ip(zone_ip, vmid):
+    import libvirt
+    vm_ip = ''
+    conn = libvirt.open('qemu+ssh://ece792@{0}/system'.format(zone_ip))
+    con = conn.listDomainsID()
+    dom = ''
+    for c in con:
+        if vmid == conn.lookupByID(c).name():
+            dom = conn.lookupByID(c)
+    vm = dom.interfaceAddresses(libvirt.VIR_DOMAIN_INTERFACE_ADDRESSES_SRC_LEASE)
+    for val in vm.values():
+        vm_ip = val['addrs'][0]['addr']
+    return vm_ip
+
 
 def delete_the_file(file_name):
     import os
     if os.path.exists(file_name):
         os.remove(file_name)
     return
+
+
+def list_vms():
+    import libvirt
+    vm_list = []
+    for val in zones.values():
+        ip = val[1]
+        conn = libvirt.open('qemu+ssh://ece792@{0}/system'.format(ip))
+        con = conn.listAllDomains()
+        all_domains = []
+        down_domains = conn.listDefinedDomains()
+        for c in con:
+            all_domains.append(c.name())
+        vm_list.extend(set(all_domains) - set(down_domains))
+    # print(vm_list)
+    return vm_list
 
 
 if __name__ == '__main__':

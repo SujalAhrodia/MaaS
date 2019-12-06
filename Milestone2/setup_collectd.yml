@@ -17,7 +17,7 @@
     copy:
       src: "{{ custom_file }}"
       dest: /opt/custom_plugins/
-    when: '"{{ custom_file }}" is defined'
+    when: custom_file != "None"
   
   - name: Restarting Collectd on the VM
     systemd:

@@ -16,4 +16,10 @@
   - name: Add the IP
     shell: ip addr add {{ip_addr}}/25 dev {{dev_name}}
     # when: "'172.16.3.1' not in ansible_all_ipv4_addresses'" or "'172.16.3.2' not in ansible_all_ipv4_addresses'"
+  - name: Add default route if it is the first subnet in the list
+    shell: "{{ item }}"
+    with_items:
+      - "ip route del default"
+      - "ip route add default dev '{{dev_name}}' via '{{gw_ip}}'"
+    when: "'{{ flag }}' is True"
 
