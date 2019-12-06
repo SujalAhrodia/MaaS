@@ -17,6 +17,7 @@
       interactive: yes
       detach: yes
       recreate: yes
+      privileged: yes
 
   - name: Start SSH
     command: docker exec  "{{ vmid }}" service ssh start
