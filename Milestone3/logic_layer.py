@@ -60,18 +60,29 @@ def create_subnet_switch(sn, sn_id, tenant_id, flag):
 
 
 def list_vms():
-    import libvirt
-    vm_list = []
+    from pexpect import pxssh
+    vm_list=[]
+    vms=[]
     for val in zones.values():
+        log=pxssh.pxssh(timeout=120)
         ip = val[1]
-        conn = libvirt.open('qemu+ssh://ece792@{0}/system'.format(ip))
-        con = conn.listAllDomains()
-        all_domains = []
-        down_domains = conn.listDefinedDomains()
-        for c in con:
-            all_domains.append(c.name())
-        vm_list.extend(set(all_domains) - set(down_domains))
-    # print(vm_list)
+        pwd=''
+        if ip == '172.16.3.1':
+            pwd='linux@1234'
+        else:
+            pwd='linux@123'
+        print(ip,pwd)
+        log.login(ip,'ece792',pwd)
+        log.sendline("sudo docker ps -a --filter status=running |awk 'NR!=1 {print $NF}'")
+        log.sendline(pwd)
+        log.prompt()
+        vms.extend(log.before.decode('utf-8').split('\r\n'))
+        for v in vms:
+            if 't-' in v:
+                vm_list.append(v)
+        print(log.before)
+        print(vm_list)
+        log.logout()
     return vm_list
 
 
@@ -145,7 +156,7 @@ def create_vpc(replace_flag, filename):
                     # else:
                     subnets.add(sn)
                 # adds unique subnets only
-        # print(subnet_map)
+        # print(subnet_ma)
         count = 1
         for sn in subnets:
             if sn in subnet_map.keys():
@@ -215,7 +226,9 @@ def create_vpc(replace_flag, filename):
                 prefix = '.'.join(s for s in sn_octets[:-1])
                 subnet_id = prefix + '.0/24'
                 s_ref = int(subnet_map[subnet_id][-1]) + 1
-                if prefix in state_data[key][s_ref]:
+                print(s_ref,key)
+                print(state_data)
+                if prefix == state_data[key][s_ref]:
                     pass
                 else:
                     state_data[key].insert(s_ref, 0)
@@ -260,7 +273,7 @@ def create_vpc(replace_flag, filename):
 def get_vm_ip(zone_ip,vm_id):
     from pexpect import pxssh
     import re
-    ip=''
+    mgm_ip=''
     log=pxssh.pxssh()
     pwd=''
     if zone_ip == '172.16.3.1':

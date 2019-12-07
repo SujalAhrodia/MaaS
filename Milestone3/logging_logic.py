@@ -77,6 +77,10 @@ curl -i -XPOST 'http://{1}:8086/write?db=collectd' --data-binary 'trial,protocol
 sudo ip netns exec {0} iptables -Z
 '''
 
+grafana_conf = '''
+[server]
+root_url = http://{0}:3000
+'''
 
 def gen_keepalived_conf(state, m_ip, s_ip, prio, virtual_ip):
     keepalived_conf = f'''
@@ -167,7 +171,7 @@ def parse_input_json(filename):
             # Run the inventory for creating the IFDB VMs
             os.system(command)
         if ifdb_slave not in vm_list:
-            command = 'ansible-playbook spawn_ifdb.yml --extra-vars "host={0} vmid={1}"'.format('zone1', ifdb_slave)
+            command = 'ansible-playbook spawn_ifdb.yml --extra-vars "host={0} vmid={1}"'.format('zone2', ifdb_slave)
             print(command)
             # Run the inventory for creating the IFDB VMs
             os.system(command)
@@ -177,7 +181,7 @@ def parse_input_json(filename):
         inventory_file_handler = open(inventory_file_name, 'a')
         IFDB_IPs = find_ifdb_ip(ifdb_master, ifdb_slave)
         print(IFDB_IPs)
-        virtual_ip = '192.168.123.' + str(int(tenant_id[-1]) + 1) + '/24'
+        virtual_ip = '172.17.0.' + str(int(tenant_id[-1]) + 1) + '/24'
         temp = '[ip1]\n' +\
             IFDB_IPs[0] + ' ' + inventory_common_data + '\n' +\
             "[ip2]\n" +\
@@ -196,6 +200,8 @@ def parse_input_json(filename):
         # print(backup_sh)
         with open('backup.sh', 'w') as f:
             f.write(backup_sh)
+        with open('grafana/grafana.ini', 'w') as f:
+            f.write(grafana_conf.format(virtual_ip[:-3]))
         command = 'ansible-playbook -i {0} ifdbconf.yml --extra-vars "keepalived_conf={1} backup_sh={2}"'\
                   .format(inventory_file_name, 'keepalived.conf', 'backup.sh')
         print(command)
