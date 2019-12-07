@@ -77,6 +77,11 @@ curl -i -XPOST 'http://{1}:8086/write?db=collectd' --data-binary 'trial,protocol
 sudo ip netns exec {0} iptables -Z
 '''
 
+grafana_conf = '''
+[server]
+root_url = http://{0}:3000
+'''
+
 
 def gen_keepalived_conf(state, m_ip, s_ip, prio, virtual_ip):
     keepalived_conf = f'''
@@ -198,6 +203,8 @@ def parse_input_json(filename):
         # print(backup_sh)
         with open('backup.sh', 'w') as f:
             f.write(backup_sh)
+        with open('grafana/grafana.ini', 'w') as f:
+            f.write(grafana_conf.format(virtual_ip[:-3]))
         command = 'ansible-playbook -i {0} ifdbconf.yml --extra-vars "keepalived_conf={1} backup_sh={2}"'\
                   .format(inventory_file_name, 'keepalived.conf', 'backup.sh')
         print(command)
