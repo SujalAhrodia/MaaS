@@ -10,19 +10,19 @@
   - name: Get pid of container
     shell: docker inspect -f {{'{{.State.Pid}}'}} {{tid}}{{vmid}}
     register: container_status
-  - debug: msg="{{container_status.stdout_lines}}"
+  - debug: msg="{{container_status.stdout_lines[0]}}"
 
   - name: Send interface to subnet switch and container
     command: "{{item}}"
     with_items:
       - ip link set vxbr_{{tid}}{{vmid}} netns {{tid}}{{snid}}
-      - ip link set {{tid}}{{vmid}}_vxbr netns {{container_status.stdout_lines}}
+      - ip link set {{tid}}{{vmid}}_vxbr netns {{container_status.stdout_lines[0]}}
   
   - name: Set the interface in subnet switch to up and add to vxlanbr
     command: ip netns exec {{tid}}{{snid}} {{item}}
     with_items:
       - ip link set dev vxbr_{{tid}}{{vmid}} up
-      - brtcl addif vxbr vxbr_{{tid}}{{vmid}}
+      - brctl addif vxbr vxbr_{{tid}}{{vmid}}
   
   - name: Set the interface in container to up and add IP address
     command: docker exec {{tid}}{{vmid}} {{item}}
