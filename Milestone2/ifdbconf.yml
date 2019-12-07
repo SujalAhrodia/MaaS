@@ -22,7 +22,37 @@
       dest: /opt/backup.sh
       owner: root
       mode: '0777'
-    
+  
+  - name: add grafana.ini
+    copy:
+      src: grafana/grafana.ini
+      dest: /etc/grafana/grafana.ini
+
+  - name: add datasources.yaml
+    copy:
+      dest: /etc/grafana/provisioning/datasources
+      src: grafana/datasources/sample.yml
+
+  - name: add dashboards.json
+    copy:
+      dest: /etc/grafana/provisioning/dashboards
+      src: grafana/dashboards/MaaS.json
+
+  - name: add dashboards.yaml
+    copy:
+      dest: /etc/grafana/provisioning/dashboards
+      src: grafana/dashboards/sample.yml
+
+  - name: Restart grafana
+    systemd:
+      name: grafana-server
+      state: restarted
+
+  - name: Restart InfluxDB
+    systemd:
+      name: influxd
+      state: restarted
+
   - name: Check file exists 
     stat:
       path: /root/.ssh
