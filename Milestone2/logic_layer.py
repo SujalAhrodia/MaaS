@@ -215,7 +215,7 @@ def create_vpc(replace_flag, filename):
                 prefix = '.'.join(s for s in sn_octets[:-1])
                 subnet_id = prefix + '.0/24'
                 s_ref = int(subnet_map[subnet_id][-1]) + 1
-                if prefix in state_data[key][s_ref]:
+                if prefix == state_data[key][s_ref]:
                     pass
                 else:
                     state_data[key].insert(s_ref, 0)
