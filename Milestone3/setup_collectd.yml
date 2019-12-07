@@ -7,7 +7,7 @@
   - name: Copy the collectd.conf
     copy:
       src: "{{ item }}"
-      dest: /etc/collectd.conf
+      dest: /etc/collectd/collectd.conf
       owner: root
       mode: '0644'
     with_items:
