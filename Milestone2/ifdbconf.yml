@@ -111,8 +111,3 @@
 
   - name: Set authorized key
     shell: cat /etc/ssh/id_rsa.pub > /root/.ssh/authorized_keys
-
-
-  # 'ansible-playbook -i {0} ifdbconf.yml --extra-vars "keepalived_conf={1}, backup_sh={2}"' \.format(inventory_file_name, 'keepaliveslave.conf', 'backupslave.sh')
-
-  # ansible-playbook ifdbconf.yml -i test.ini --extra-vars "keepalived_conf= keepaliveslave.conf backup_sh= backupslave.sh"
