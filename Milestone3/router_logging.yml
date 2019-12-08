@@ -12,8 +12,9 @@
   - name:
     copy:
       src: "{{ router_sh }}"
-      dest: /home/router_logging/
+      dest: /home/ece792/router_logging/
+      
   - name: Setup cron to monitor the tenant router
     cron:
-      job: sh /home/ece792/router_logging/"{{ router_sh }}" >/dev/null 2>&1
+      job: "sh /home/ece792/router_logging/{{ router_sh }} >/dev/null 2>&1"
       

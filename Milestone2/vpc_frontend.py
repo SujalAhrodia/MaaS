@@ -21,7 +21,6 @@ service_data_format = {
     }
 }
 
-
 def get_tenant_vpc_file(Tenant_name):
     import glob
     import re
@@ -35,7 +34,6 @@ def get_tenant_vpc_file(Tenant_name):
         if Tenant_name == item[:-1]:
             return list_of_files[list_of_files.index(items)]
     return 0
-
 
 def create_json_file(Tenant_name, vm_dict={}, monitoring_dict={}, replace_flag=False):
     # if replace_flag:
@@ -52,7 +50,6 @@ def create_json_file(Tenant_name, vm_dict={}, monitoring_dict={}, replace_flag=F
         import json
         f.write(json.dumps(vpc_data))
     return replace_flag, Tenant_name + '.json'
-
 
 def main():
     Tenant_name = input("Please enter your vpc deployment name (Tenant Name):")

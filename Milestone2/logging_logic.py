@@ -117,7 +117,6 @@ def gen_keepalived_conf(state, m_ip, s_ip, prio, virtual_ip):
     '''
     return keepalived_conf
 
-
 def gen_backup_sh(virtual_ip, peer_ip):
     backup_sh = f'''
     #! /bin/bash
@@ -140,7 +139,6 @@ def gen_backup_sh(virtual_ip, peer_ip):
     fi
     '''
     return backup_sh
-
 
 def parse_input_json(filename):
     print(filename)
@@ -316,13 +314,11 @@ def parse_input_json(filename):
         f.write(json.dumps(output_data))
     print('File with name: ', filename, ' created for the tenant')
 
-
 def find_ifdb_ip(ifdb_master, ifdb_slave):
     # Change for Containers
     ifdb_mip = get_vm_ip('172.16.3.1', ifdb_master)
     ifdb_sip = get_vm_ip('172.16.3.2', ifdb_slave)
     return [ifdb_mip, ifdb_sip]
-
 
 def get_vm_ip(zone_ip, vmid):
     import libvirt
@@ -338,13 +334,11 @@ def get_vm_ip(zone_ip, vmid):
         vm_ip = val['addrs'][0]['addr']
     return vm_ip
 
-
 def delete_the_file(file_name):
     import os
     if os.path.exists(file_name):
         os.remove(file_name)
     return
-
 
 def list_vms():
     import libvirt
@@ -360,7 +354,6 @@ def list_vms():
         vm_list.extend(set(all_domains) - set(down_domains))
     # print(vm_list)
     return vm_list
-
 
 if __name__ == '__main__':
     parse_input_json(filename)

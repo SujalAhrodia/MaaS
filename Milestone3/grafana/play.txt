@@ -1,0 +1,4 @@
+Grafana Play:
+1. update /usr/share/grafana/conf/provisioning/datasources/sample.yml   (permissions should be 644)
+2. update /usr/share/grafana/conf/provisioning/dashboards/sample.yml   (permissions should be 644)
+3. update grafana.ini
