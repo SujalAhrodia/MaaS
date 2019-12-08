@@ -179,8 +179,8 @@ def parse_input_json(filename):
         maas_data = ''
         with open('grafana/dashboards/MaaS.json', 'r') as f:
             maas_data = json.loads(''.join(f.readlines()))
-        maas_data["panels"][0]["targets"][0]["tags"][0]["value"] = list(vpc_data['VPC'].keys())[0]
-        maas_data["panels"][1]["targets"][0]["tags"][0]["value"] = list(vpc_data['VPC'].keys())[0]
+        maas_data["panels"][0]["targets"][0]["tags"][0]["value"] = list(vpc_data.keys())[0]
+        maas_data["panels"][1]["targets"][0]["tags"][0]["value"] = list(vpc_data.keys())[0]
         with open('grafana/dashboards/MaaS.json', 'w') as f:
             f.write(json.dumps(maas_data))
         stream = open('grafana/datasources/sample.yml', 'r')
@@ -211,7 +211,7 @@ def parse_input_json(filename):
         with open('grafana/grafana.ini', 'w') as f:
             f.write(grafana_conf.format(virtual_ip[:-3]))
         command = 'ansible-playbook -i {0} ifdbconf.yml --extra-vars "keepalived_conf={1} backup_sh={2}"'\
-                  .format(inventory_file_name, 'generated_files/keepalived.conf', 'backup.sh')
+                  .format(inventory_file_name, 'generated_files/keepalived.conf', 'generated_files/backup.sh')
         print(command)
         # Run the play for starting keepalived on the Master
         vm_list = list_vms()
