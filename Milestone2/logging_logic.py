@@ -179,8 +179,8 @@ def parse_input_json(filename):
         maas_data = ''
         with open('grafana/dashboards/MaaS.json', 'r') as f:
             maas_data = json.loads(''.join(f.readlines()))
-        maas_data["panels"][0]["targets"][0]["tags"][0]["value"] = list(vpc_data['VPC'].keys())[0]
-        maas_data["panels"][1]["targets"][0]["tags"][0]["value"] = list(vpc_data['VPC'].keys())[0]
+        maas_data["panels"][0]["targets"][0]["tags"][0]["value"] = tenant_id+list(vpc_data.keys())[0]
+        maas_data["panels"][1]["targets"][0]["tags"][0]["value"] = tenant_id+list(vpc_data.keys())[0]
         with open('grafana/dashboards/MaaS.json', 'w') as f:
             f.write(json.dumps(maas_data))
         stream = open('grafana/datasources/sample.yml', 'r')
