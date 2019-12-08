@@ -18,7 +18,7 @@ def reader():
     collectd.info('cmd called')
     # os.system("uptime | awk '{print $8 $9 $10}' > /opt/custom_plugins/data.txt")
     out = ''
-    with open('/opt/custom_plugins/data.txt', 'r') as f:
+    with open('/opt/custom_plugins/sysdata.txt', 'r') as f:
         out = f.readline()
     # p2 = subprocess.Popen(cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE, shell=True)
     collectd.info('poen called')
