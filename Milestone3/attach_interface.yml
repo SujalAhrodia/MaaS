@@ -5,7 +5,7 @@
   become: yes
   tasks:
   - name: Create Veth pairs
-    command: ip link add {{tid}}{{vmid}}_vxbr type veth peer name vxbr_{{tid}}{{vmid}}
+    command: ip link add {{tid}}{{vmid}}_{{snid}}br type veth peer name {{snid}}br_{{tid}}{{vmid}}
 
   - name: Get pid of container
     shell: docker inspect -f {{'{{.State.Pid}}'}} {{tid}}{{vmid}}
@@ -15,26 +15,26 @@
   - name: Send interface to subnet switch and container
     command: "{{item}}"
     with_items:
-      - ip link set vxbr_{{tid}}{{vmid}} netns {{tid}}{{snid}}
-      - ip link set {{tid}}{{vmid}}_vxbr netns {{container_status.stdout_lines[0]}}
+      - ip link set {{snid}}br_{{tid}}{{vmid}} netns {{tid}}{{snid}}
+      - ip link set {{tid}}{{vmid}}_{{snid}}br netns {{container_status.stdout_lines[0]}}
   
   - name: Set the interface in subnet switch to up and add to vxlanbr
     command: ip netns exec {{tid}}{{snid}} {{item}}
     with_items:
-      - ip link set dev vxbr_{{tid}}{{vmid}} up
-      - brctl addif vxbr vxbr_{{tid}}{{vmid}}
+      - ip link set dev {{snid}}br_{{tid}}{{vmid}} up
+      - brctl addif vxbr {{snid}}br_{{tid}}{{vmid}}
   
   - name: Set the interface in container to up and add IP address
     command: docker exec {{tid}}{{vmid}} {{item}}
     with_items:
-      - ip link set dev {{tid}}{{vmid}}_vxbr up
-      - ip addr add {{ip_addr}}/25 dev {{tid}}{{vmid}}_vxbr
+      - ip link set dev {{tid}}{{vmid}}_{{snid}}br up
+      - ip addr add {{ip_addr}}/25 dev {{tid}}{{vmid}}_{{snid}}br
 
   - name: Set the default route
     command: docker exec {{tid}}{{vmid}} {{item}}
     with_items:
       - ip r del default
-      - ip r add default dev {{tid}}{{vmid}}_vxbr via {{ip_net}}.1
+      - ip r add default dev {{tid}}{{vmid}}_{{snid}}br via {{ip_net}}.1
     when: flag == "True"
   
   - name: Add iptable rules for tenant Isolation
