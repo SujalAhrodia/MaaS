@@ -132,7 +132,6 @@ def gen_backup_sh(virtual_ip, peer_ip):
     '''
     return backup_sh
 
-
 def parse_input_json(filename):
     print(filename)
     input_data = ''
@@ -304,21 +303,25 @@ def parse_input_json(filename):
     else:
         print('Tenant has chosen not to enable monitoring')
 
-
 def find_ifdb_ip(ifdb_master, ifdb_slave):
-    #Change for Containers
-    from create_interface import create_ssh_conn, execute_command, close_ssh_conn
-    zones = {'zone1': ['172.16.3.1', 'linux@1234'],
-             'zone2': ['172.16.3.2', 'linux@123']}
-    ifdb_m_conn = create_ssh_conn(zones['zone1'][0], 'ece792', zones['zone1'][1])
-    cmd = "sudo virsh domifaddr " + ifdb_master + "|awk 'FNR==3 {print $4}'"
-    print(cmd)
-    m_ip = execute_command(ifdb_m_conn, cmd).split('/')[0]
-    ifdb_s_conn = create_ssh_conn(zones['zone2'][0], 'ece792', zones['zone2'][1])
-    cmd = "sudo virsh domifaddr " + ifdb_slave + "|awk 'FNR==3 {print $4}'"
-    print(cmd)
-    s_ip = execute_command(ifdb_s_conn, cmd).split('/')[0]
-    return [m_ip, s_ip]
+    # Change for Containers
+    ifdb_mip = get_vm_ip('172.16.3.1', ifdb_master)
+    ifdb_sip = get_vm_ip('172.16.3.2', ifdb_slave)
+    return [ifdb_mip, ifdb_sip]
+
+def get_vm_ip(zone_ip, vmid):
+    import libvirt
+    vm_ip = ''
+    conn = libvirt.open('qemu+ssh://ece792@{0}/system'.format(zone_ip))
+    con = conn.listDomainsID()
+    dom = ''
+    for c in con:
+        if vmid == conn.lookupByID(c).name():
+            dom = conn.lookupByID(c)
+    vm = dom.interfaceAddresses(libvirt.VIR_DOMAIN_INTERFACE_ADDRESSES_SRC_LEASE)
+    for val in vm.values():
+        vm_ip = val['addrs'][0]['addr']
+    return vm_ip
 
 def delete_the_file(file_name):
     import os
@@ -326,6 +329,20 @@ def delete_the_file(file_name):
         os.remove(file_name)
     return
 
+def list_vms():
+    import libvirt
+    vm_list = []
+    for val in zones.values():
+        ip = val[1]
+        conn = libvirt.open('qemu+ssh://ece792@{0}/system'.format(ip))
+        con = conn.listAllDomains()
+        all_domains = []
+        down_domains = conn.listDefinedDomains()
+        for c in con:
+            all_domains.append(c.name())
+        vm_list.extend(set(all_domains) - set(down_domains))
+    # print(vm_list)
+    return vm_list
 
 if __name__ == '__main__':
     parse_input_json(filename)

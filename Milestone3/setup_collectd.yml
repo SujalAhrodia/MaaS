@@ -12,11 +12,20 @@
       mode: '0644'
     with_items:
       - "{{ collectd_file }}"
+  
   - name: Copy the custom script
-      copy:
-        src: "{{ custom_file }}"
-        dest: /opt/custom_plugins/
-      when: "{{ custom_file }}" is defined
+    copy:
+      src: "{{ custom_file }}"
+      dest: /opt/custom_plugins/
+    when: custom_file != "Fail"
+ 
+  - name: Cron to setup custom logging
+    cron:
+      name: Seting up the custom logging
+      job: "python /opt/custom_plugins/data.py > /dev/null 2>&1"
+      minutes: 1
+    when: custom_file != "Fail"
+
   - name: Restarting Collectd on the VM
     shell: "{{item}}"
     with_items:

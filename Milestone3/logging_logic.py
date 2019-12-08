@@ -3,7 +3,7 @@
 import json
 from subprocess import Popen
 
-filename = 'Testing-t-1.json'
+filename = 'generated_files/Testing-t-1.json'
 
 monitoring_basic_data = '''
 #
@@ -132,48 +132,34 @@ def gen_backup_sh(virtual_ip, peer_ip):
     '''
     return backup_sh
 
-
 def parse_input_json(filename):
     print(filename)
     input_data = ''
     with open(filename, 'r') as f:
         input_data = json.loads(''.join(f.readlines()))
+    subnet_map = input_data['Subnets']
     vpc_data = input_data['VPC']
     mon_data = input_data['Monitoring']
-    # monitoring_data = mon_data['flag']
-    # print(monitoring_data)
     tenant_name = filename.split('-')[0]
-    # print(Tenant_name)
-    # tenant_file = get_tenant_vpc_file(tenant_name)
-    # print(tenant_file)
-    # if tenant_file == 0:
-        # return 'Tenant File Not found. Looking for {}.json'.format(tenant_name)
-    # with open(tenant_file, 'r') as f:
-        # vpc_data = json.loads(''.join(f.readlines()))
-    # print(vpc_data)
+    tenant_name = tenant_name.split('/')[1]
     tenant_id = filename.split('-')[1] + '-' + filename.split('-')[2][:-5]
     if mon_data['flag']:
         ifdb_master = 'IFDB_' + tenant_id
         ifdb_slave = 'IFDB_' + tenant_id + '_bak'
         print(ifdb_master)
         print(ifdb_slave)
-        command = 'ansible-playbook spawn_vm.yml --extra-vars "host={0} vmid={1} image=goldenIFDB"'\
-                  .format('zone1', ifdb_master)
-        print(command)
-        # Run the inventory for creating the IFDB VMs
-        # q = Popen(command,
-        #           shell=True)
-        # (output, err) = q.communicate()
-        # q.wait()
-        command = 'ansible-playbook spawn_vm.yml --extra-vars "host={0} vmid={1} image=goldenIFDB"'\
-                  .format('zone2', ifdb_slave)
-        print(command)
-        # Run the inventory for creating the IFDB VMs
-        # q = Popen(command,
-        #           shell=True)
-        # (output, err) = q.communicate()
-        # q.wait()
-        inventory_file_name = ifdb_master + '-inventory.ini'
+        vm_list = list_vms()
+        if ifdb_master not in vm_list:
+            command = 'ansible-playbook spawn_ifdb.yml --extra-vars "host={0} vmid={1}"'.format('zone1', ifdb_master)
+            print(command)
+            # Run the inventory for creating the IFDB VMs
+            os.system(command)
+        if ifdb_slave not in vm_list:
+            command = 'ansible-playbook spawn_ifdb.yml --extra-vars "host={0} vmid={1}"'.format('zone2', ifdb_slave)
+            print(command)
+            # Run the inventory for creating the IFDB VMs
+            os.system(command)
+        inventory_file_name = 'generated_files/' + ifdb_master + '-inventory.ini'
         print(inventory_file_name)
         delete_the_file(inventory_file_name)
         inventory_file_handler = open(inventory_file_name, 'a')
@@ -190,23 +176,21 @@ def parse_input_json(filename):
         keepalived_conf = gen_keepalived_conf(state='MASTER', m_ip=IFDB_IPs[0],
                                               s_ip=IFDB_IPs[1], prio='102', virtual_ip=virtual_ip)
         # print(keepalived_conf)
-        with open('keepalived.conf', 'w') as f:
+        with open('generated_files/keepalived.conf', 'w') as f:
             f.write(keepalived_conf)
         # backup_sh.format(virtual_ip, IFDB_IPs[1])
         backup_sh = gen_backup_sh(virtual_ip=virtual_ip, peer_ip=IFDB_IPs[1])
         # print(backup_sh)
-        with open('backup.sh', 'w') as f:
+        with open('generated_files/backup.sh', 'w') as f:
             f.write(backup_sh)
         command = 'ansible-playbook -i {0} ifdbconf.yml --extra-vars "keepalived_conf={1} backup_sh={2}"'\
                   .format(inventory_file_name, 'keepalived.conf', 'backup.sh')
         print(command)
         # Run the play for starting keepalived on the Master
-        # q = Popen(command,
-        #           shell=True)
-        # (output, err) = q.communicate()
-        # q.wait()
-        delete_the_file(inventory_file_name)
-        inventory_file_name = ifdb_slave + '-inventory.ini'
+        vm_list = list_vms()
+        if ifdb_master in vm_list:
+            os.system(command)
+        inventory_file_name = 'generated_files/' + ifdb_slave + '-inventory.ini'
         print(inventory_file_name)
         delete_the_file(inventory_file_name)
         inventory_file_handler = open(inventory_file_name, 'a')
@@ -221,22 +205,20 @@ def parse_input_json(filename):
         keepalived_conf = gen_keepalived_conf(state='SLAVE', m_ip=IFDB_IPs[1],
                                               s_ip=IFDB_IPs[0], prio='101', virtual_ip=virtual_ip)
         # print(keepalived_conf)
-        with open('keepalived.conf', 'w') as f:
+        with open('generated_files/keepalived.conf', 'w') as f:
             f.write(keepalived_conf)
         # backup_sh.format(virtual_ip, IFDB_IPs[0])
         backup_sh = gen_backup_sh(virtual_ip=virtual_ip, peer_ip=IFDB_IPs[0])
         # print(backup_sh)
-        with open('backup.sh', 'w') as f:
+        with open('generated_files/backup.sh', 'w') as f:
             f.write(backup_sh)
         command = 'ansible-playbook -i {0} ifdbconf.yml --extra-vars "keepalived_conf={1} backup_sh={2}"'\
-                  .format(inventory_file_name, 'keepalived.conf', 'backup.sh')
+                  .format(inventory_file_name, 'generated_files/keepalived.conf', 'generated_files/backup.sh')
         print(command)
         # Run the play for starting keepalived on the Slave
-        # q = Popen(command,
-        #           shell=True)
-        # (output, err) = q.communicate()
-        # q.wait()
-        delete_the_file(inventory_file_name)
+        vm_list = list_vms()
+        if ifdb_slave in vm_list:
+            os.system(command)
         vpc_data['IFDB'] = IFDB_IPs[0]
         vpc_data['IFDB_bak'] = IFDB_IPs[1]
         vpc_data['Virtual IP'] = virtual_ip
@@ -249,7 +231,7 @@ def parse_input_json(filename):
         inventory_file_handler = open(inventory_file_name, 'a')
         inventory_file_handler.write(inventory_header)
         for vm in vm_id_list:
-            vm_collectd_file_name = tenant_id + vm + '_collectd.conf'
+            vm_collectd_file_name = 'generated_files/' + tenant_id + vm + '_collectd.conf'
             vm_ip = vpc_data[vm][1]
             delete_the_file(vm_collectd_file_name)
             collectd_file_handler = open(vm_collectd_file_name, 'a')
@@ -290,6 +272,10 @@ def parse_input_json(filename):
             if mon_data['Custom']['flag']:
                 collectd_file_handler.write(custom_plugin_data)
             collectd_file_handler.close()
+            inventory_file_name = 'generated_files/' + tenant_id + '-inventory.ini'
+            delete_the_file(inventory_file_name)
+            inventory_file_handler = open(inventory_file_name, 'a')
+            inventory_file_handler.write(inventory_header)
             temp = vm_ip + ' ' + inventory_common_data + '\n'
             inventory_file_handler.write(temp)
             inventory_file_handler.close()
@@ -303,32 +289,49 @@ def parse_input_json(filename):
                 # p.wait()
                 # print(output)
             else:
-                print('ansible-playbook setup_collectd.yml -i {0} --extra-vars collectd_file={1}'
-                          .format(inventory_file_name, vm_collectd_file_name))
-                # p = Popen('ansible-playbook setup_collectd.yml -i {0} --extra-vars collectd_file={1}'
-                #           .format(inventory_file_name, vm_collectd_file_name),
-                #           shell=True)
-                # (output, err) = p.communicate()
-                # p.wait()
-                # print(output)
+                command = 'ansible-playbook setup_collectd.yml -i {0} --extra-vars "collectd_file={1} custom_file={2}"'\
+                    .format(inventory_file_name, vm_collectd_file_name, 'Fail')
+            print(command)
+            os.system(command)
     else:
         print('Tenant has chosen not to enable monitoring')
-
+    with open(filename, 'w') as f:
+        output_data = {
+            'Subnets': subnet_map,
+            'VPC': vpc_data,
+            'Monitoring': mon_data}
+        f.write(json.dumps(output_data))
+    print('File with name: ', filename, ' created for the tenant')
 
 def find_ifdb_ip(ifdb_master, ifdb_slave):
-    #Change for Containers
-    from create_interface import create_ssh_conn, execute_command, close_ssh_conn
-    zones = {'zone1': ['172.16.3.1', 'linux@1234'],
-             'zone2': ['172.16.3.2', 'linux@123']}
-    ifdb_m_conn = create_ssh_conn(zones['zone1'][0], 'ece792', zones['zone1'][1])
-    cmd = "sudo virsh domifaddr " + ifdb_master + "|awk 'FNR==3 {print $4}'"
-    print(cmd)
-    m_ip = execute_command(ifdb_m_conn, cmd).split('/')[0]
-    ifdb_s_conn = create_ssh_conn(zones['zone2'][0], 'ece792', zones['zone2'][1])
-    cmd = "sudo virsh domifaddr " + ifdb_slave + "|awk 'FNR==3 {print $4}'"
-    print(cmd)
-    s_ip = execute_command(ifdb_s_conn, cmd).split('/')[0]
-    return [m_ip, s_ip]
+    # Change for Containers
+    ifdb_mip = get_vm_ip('172.16.3.1', ifdb_master)
+    ifdb_sip = get_vm_ip('172.16.3.2', ifdb_slave)
+    return [ifdb_mip, ifdb_sip]
+
+def get_vm_ip(zone_ip,vm_id):
+    from pexpect import pxssh
+    import re
+    mgm_ip=''
+    log=pxssh.pxssh(timeout=120)
+    if zone_ip == '172.16.3.1':
+        pwd='linux@1234'
+    else:
+        pwd='linux@123'
+
+    print(zone_ip,pwd)
+    log.login(zone_ip,'ece792',pwd)
+    log.sendline("sudo docker inspect -f {{'{{.NetworkSettings.IPAddress}}'}} {0}".format(vm_id))
+    log.sendline(pwd)
+    log.prompt()
+    ip=log.before.decode('utf-8')
+    ip=ip.split('\r\n')
+    for i in ip:
+        if re.match('\d+\.\d+\.\d+\.\d+',i):
+            mgm_ip=i
+    print(mgm_ip)
+    log.logout()
+    return mgm_ip
 
 def delete_the_file(file_name):
     import os
@@ -336,6 +339,31 @@ def delete_the_file(file_name):
         os.remove(file_name)
     return
 
+def list_vms():
+    from pexpect import pxssh
+    vm_list=[]
+    vms=[]
+    for val in zones.values():
+        log=pxssh.pxssh(timeout=120)
+        ip = val[1]
+        pwd=''
+        if ip == '172.16.3.1':
+            pwd='linux@1234'
+        else:
+            pwd='linux@123'
+        print(ip,pwd)
+        log.login(ip,'ece792',pwd)
+        log.sendline("sudo docker ps -a --filter status=running |awk 'NR!=1 {print $NF}'")
+        log.sendline(pwd)
+        log.prompt()
+        vms.extend(log.before.decode('utf-8').split('\r\n'))
+        for v in vms:
+            if 't-' in v:
+                vm_list.append(v)
+        print(log.before)
+        print(vm_list)
+        log.logout()
+    return vm_list
 
 if __name__ == '__main__':
     parse_input_json(filename)
