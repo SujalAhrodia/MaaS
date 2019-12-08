@@ -50,11 +50,7 @@ LoadPlugin cpu
 '''
 
 memory_plugin_data = '''
-LoadPlugin memory
-<Plugin memory>
-       ValuesAbsolute true
-       ValuesPercentage false
-</Plugin>
+LoadPlugin disk
 '''
 
 custom_plugin_data = '''
