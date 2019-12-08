@@ -17,14 +17,14 @@
     copy:
       src: "{{ custom_file }}"
       dest: /opt/custom_plugins/
-    when: custom_file != "None"
+    when: custom_file != "Fail"
  
   - name: Cron to setup custom logging
     cron:
       name: Seting up the custom logging
       job: "python /opt/custom_plugins/data.py > /dev/null 2>&1"
       minutes: 1
-    when: custom_file != "None"
+    when: custom_file != "Fail"
 
   - name: Restarting Collectd on the VM
     service:

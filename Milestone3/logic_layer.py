@@ -10,28 +10,26 @@ filename = 'Testing.json'
 tenant_list = []
 zones = {'1': ['zone1', '172.16.3.1'], '2': ['zone2', '172.16.3.2']}
 
-
 def get_tenant_vpc_file(Tenant_name):
     import glob
     import re
-    list_of_files = glob.glob("*.json")
+    list_of_files = glob.glob('generated_files/' + "*.json")
     for items in list_of_files:
         item = items.strip('.json')
         item = re.sub(r'-t-', '', item)
+        item = re.sub(r'generated_files/', '', item)
         if Tenant_name == item[:-1]:
             return list_of_files[list_of_files.index(items)]
     return 0
 
-
 def create_tenant_id():
     import glob
-    list_of_files = glob.glob('*.json')
+    list_of_files = glob.glob('generated_files/' + '*.json')
     count = 0
     for item in list_of_files:
         if '-t-' in item:
             count += 1
     return count + 1
-
 
 def create_tenant_subnet_router(tenant_id):
     last_octet = (4 * int(tenant_id[-1])) - 3
@@ -45,7 +43,6 @@ def create_tenant_subnet_router(tenant_id):
     print('ansible-playbook -i inventory.ini tenant_router.yml --extra-vars "z1_host={0} z1_subnet={1} z2_host={2} z2_subnet={3} tid={4} z1_nid={5} z2_nid={6}"'.format(z1_host, z1_subnet, z2_host, z2_subnet, tenant_id, z1_network_id, z2_network_id))
     os.system('ansible-playbook -i inventory.ini tenant_router.yml --extra-vars "z1_host={0} z1_subnet={1} z2_host={2} z2_subnet={3} tid={4} z1_nid={5} z2_nid={6}"'.format(z1_host, z1_subnet, z2_host, z2_subnet, tenant_id, z1_network_id, z2_network_id))
 
-
 def create_subnet_switch(sn, sn_id, tenant_id, flag):
     if not flag:
         return
@@ -57,7 +54,6 @@ def create_subnet_switch(sn, sn_id, tenant_id, flag):
     z1_subnet = "99.0.0." + str(last_octet + 1)
     print('ansible-playbook -i inventory.ini subnet_switch.yml --extra-vars "tid={0} prefix={1} snid={2} z1_subnet={3}"'.format(tenant_id, prefix, sn_id, z1_subnet))
     os.system('ansible-playbook -i inventory.ini subnet_switch.yml --extra-vars "tid={0} prefix={1} snid={2} z1_subnet={3}"'.format(tenant_id, prefix, sn_id, z1_subnet))
-
 
 def list_vms():
     from pexpect import pxssh
@@ -85,14 +81,12 @@ def list_vms():
         log.logout()
     return vm_list
 
-
 def create_vm(vm_id, zone_id, flag):
     if not flag:
         return
     zone = zones[zone_id][0]
     print('ansible-playbook spawn_container.yml --extra-vars "host={0} vmid={1}'.format(zone, vm_id))
     os.system('ansible-playbook spawn_container.yml --extra-vars "host={0} vmid={1}"'.format(zone, vm_id))
-
 
 def create_vpc(replace_flag, filename):
     tenant = filename[:-5]
@@ -144,7 +138,16 @@ def create_vpc(replace_flag, filename):
     with open(filename) as json_file:
         data = json.load(json_file)
         # print(data['VPC'])
-        vpc_data.update(data['VPC'])
+        if replace_flag:
+            for key, cal in data['VPC'].items():
+                regex_string = r'VM([0-9])+'
+                total_number_of_vms = len(vpc_data.keys())
+                if key in vpc_data.keys():
+                    new_vm_id = int(re.match(regex_string, key).groups()[0]) + total_number_of_vms
+                    new_vm_id = 'VM' + str(new_vm_id)
+                    vpc_data.update({new_vm_id: data['VPC'][key]})
+        else:
+            vpc_data.update(data['VPC'])
         mon_data = data['Monitoring']
         # print(vpc_data)
         subnets = set(subnet_map.keys())
@@ -156,15 +159,16 @@ def create_vpc(replace_flag, filename):
                     # else:
                     subnets.add(sn)
                 # adds unique subnets only
-        # print(subnet_ma)
-        count = 1
+        # print(subnet_map)
+        count = len(subnet_map.keys())
+        print(count)
         for sn in subnets:
-            if sn in subnet_map.keys():
+            if sn not in subnet_map.keys():
                 count += 1
-                continue
-            sn_id = "sn" + (str(count))
-            subnet_map.update({sn: sn_id})
-            count += 1
+                sn_id = "sn" + (str(count))
+                subnet_map.update({sn: sn_id})
+            print('\t subnet map after updating the map with IDs in the loop: ', subnet_map)
+            # count += 1
         print('\nTotal Subnets required:\n\t', subnet_map)
         print('\nTotal VMs required:\n\t', vpc_data)
 
@@ -199,6 +203,33 @@ def create_vpc(replace_flag, filename):
 
     for key, val in vpc_data.items():
         vm_id = tenant_id + key
+        create_vm_flag = False if vm_id in vm_list else True
+        print("For the vm: ", vm_id, "Adding networks if needed: ", create_vm_flag)
+        if not create_vm_flag:
+            print(subnet_map.values)
+            for subnet, _id in subnet_map.items():
+                print(subnet)
+                print('\tNetwork of the VM', val)
+                print('\t Subnet map of all subnets', subnet_map)
+                sn_octets = subnet.split('.')
+                prefix = '.'.join(s for s in sn_octets[:-1])
+                # subnet_id = prefix + '.0/24'
+                s_ref = int(_id[-1]) + 1
+                print(s_ref)
+                try:
+                    if prefix in str(state_data[key][s_ref]):
+                        pass
+                    else:
+                        print(key, state_data[key])
+                        state_data[key].insert(s_ref, 0)
+                        print(key, state_data[key])
+                except IndexError as e:
+                    print(key, state_data[key])
+                    state_data[key].insert(s_ref, 0)
+                    print(key, state_data[key])
+
+    for key, val in vpc_data.items():
+        vm_id = tenant_id + key
         print(vm_id)
         print(vm_list)
         create_vm_flag = False if vm_id in vm_list else True
@@ -214,24 +245,14 @@ def create_vpc(replace_flag, filename):
         zone_data = {'zone1': ['172.16.3.1', 'linux@1234'],
                      'zone2': ['172.16.3.2', 'linux@123']}
         #print(zone_name)
-        with open('vminventory.ini', 'w') as f:
-            f.write('[zone]\n')
+        with open('generated_files/vminventory.ini', 'w') as f:
+            f.write(inventory_header)
+            f.write(mgmt_ip + ' ' + inventory_common_data)
+            f.write('\n[zone]\n')
             f.write(zone_ip + ' ansible_connection=ssh ansible_ssh_user=ece792 ansible_ssh_pass=' + zone_data[zone_name][1] + ' ansible_sudo_pass=' + zone_data[zone_name][1])
         i = 1
-        if not create_vm_flag:
-            for subnet in val[1:]:
-                print(subnet)
-                print(subnet_map)
-                sn_octets = subnet.split('.')
-                prefix = '.'.join(s for s in sn_octets[:-1])
-                subnet_id = prefix + '.0/24'
-                s_ref = int(subnet_map[subnet_id][-1]) + 1
-                print(s_ref,key)
-                print(state_data)
-                if prefix == state_data[key][s_ref]:
-                    pass
-                else:
-                    state_data[key].insert(s_ref, 0)
+        print('\t State Data using which interfaces will be attached', state_data)
+
         for subnet in val[1:]:
             print(subnet)
             print(subnet_map)
@@ -252,14 +273,20 @@ def create_vpc(replace_flag, filename):
             state_data[key][s_ref] = ip
             first_flag = True if v[1] == 0 else False
             gw_ip = '.'.join(ip.split('.')[:-1]) + '.1'
-            cmd = 'ansible-playbook -i vminventory.ini attach_interface.yml --extra-vars "ip_net={0} ip_addr={1} vmid={2} tid={3} snid={4}"'.format(prefix, ip,key, tenant_id , subnet_map[subnet_id])
+            virtual_ip = '172.17.0.' + str(int(tenant_id[-1]) + 1) + '/24'
+            # cmd = 'ansible-playbook -i generated_files/vminventory.ini attach_interface.yml --extra-vars "dev_name={0} ip_addr={1} vmid={2} network_name={3} host={4} flag={5} gw_ip={6} virtual_ip={7}"'\
+                # .format(dev_name, ip, vm_id, 'net_' + tenant_id + subnet_map[subnet_id], zones[vpc_data[key][0]][0], first_flag, gw_ip, virtual_ip)
+            
+            cmd = 'ansible-playbook -i generated_files/vminventory.ini attach_interface.yml --extra-vars "ip_net={0} ip_addr={1} vmid={2} tid={3} snid={4} virtual_ip={5}"'\
+                  .format(prefix, ip,key, tenant_id , subnet_map[subnet_id], virtual_ip)
+            
             print(cmd)
             os.system(cmd)
             i += 1
         state_data[key][1] = mgmt_ip
     print(state_data)
     print(mon_data)
-    output_filename = tenant + '-' + tenant_id + '.json'
+    output_filename = 'generated_files/' + tenant + '-' + tenant_id + '.json'
     with open(output_filename, 'w') as f:
         output_data = {
             'Subnets': subnet_map,
@@ -295,5 +322,4 @@ def get_vm_ip(zone_ip,vm_id):
     return mgm_ip
 
 if __name__ == '__main__':
-    filename='NewTenant.json'
     output_filename = create_vpc(replace_flag, filename)
