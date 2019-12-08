@@ -3,6 +3,7 @@
 import json
 from subprocess import Popen
 import os
+import yaml
 
 zones = {'1': ['zone1', '172.16.3.1'], '2': ['zone2', '172.16.3.2']}
 
@@ -82,6 +83,7 @@ grafana_conf = '''
 root_url = http://{0}:3000
 '''
 
+
 def gen_keepalived_conf(state, m_ip, s_ip, prio, virtual_ip):
     keepalived_conf = f'''
     vrrp_script chk_influx {{
@@ -115,6 +117,7 @@ def gen_keepalived_conf(state, m_ip, s_ip, prio, virtual_ip):
     '''
     return keepalived_conf
 
+
 def gen_backup_sh(virtual_ip, peer_ip):
     backup_sh = f'''
     #! /bin/bash
@@ -137,6 +140,7 @@ def gen_backup_sh(virtual_ip, peer_ip):
     fi
     '''
     return backup_sh
+
 
 def parse_input_json(filename):
     print(filename)
@@ -172,6 +176,20 @@ def parse_input_json(filename):
         IFDB_IPs = find_ifdb_ip(ifdb_master, ifdb_slave)
         print(IFDB_IPs)
         virtual_ip = '172.17.0.' + str(int(tenant_id[-1]) + 1) + '/24'
+        maas_data = ''
+        with open('grafana/dashboards/MaaS.json', 'r') as f:
+            maas_data = json.loads(''.join(f.readlines()))
+        maas_data["panels"][0]["targets"][0]["tags"][0]["value"] = list(vpc_data['VPC'].keys())[0]
+        maas_data["panels"][1]["targets"][0]["tags"][0]["value"] = list(vpc_data['VPC'].keys())[0]
+        with open('grafana/dashboards/MaaS.json', 'w') as f:
+            f.write(json.dumps(maas_data))
+        stream = open('grafana/datasources/sample.yml', 'r')
+        datasource = yaml.load(stream)
+        stream.close()
+        datasource['datasources'][0]['url'] = 'http://' + virtual_ip[:-3] + ':8086'
+        stream = open('grafana/datasources/sample.yml', 'w')
+        yaml.dump(datasource, stream)
+        stream.close()
         temp = '[ip1]\n' +\
             IFDB_IPs[0] + ' ' + inventory_common_data + '\n' +\
             "[ip2]\n" +\
@@ -296,35 +314,38 @@ def parse_input_json(filename):
         f.write(json.dumps(output_data))
     print('File with name: ', filename, ' created for the tenant')
 
+
 def find_ifdb_ip(ifdb_master, ifdb_slave):
     # Change for Containers
     ifdb_mip = get_vm_ip('172.16.3.1', ifdb_master)
     ifdb_sip = get_vm_ip('172.16.3.2', ifdb_slave)
     return [ifdb_mip, ifdb_sip]
 
-def get_vm_ip(zone_ip,vm_id):
+
+def get_vm_ip(zone_ip, vm_id):
     from pexpect import pxssh
     import re
-    mgm_ip=''
-    log=pxssh.pxssh(timeout=120)
+    mgm_ip = ''
+    log = pxssh.pxssh(timeout=120)
     if zone_ip == '172.16.3.1':
-        pwd='linux@1234'
+        pwd = 'linux@1234'
     else:
-        pwd='linux@123'
+        pwd = 'linux@123'
 
-    print(zone_ip,pwd)
-    log.login(zone_ip,'ece792',pwd)
+    print(zone_ip, pwd)
+    log.login(zone_ip, 'ece792', pwd)
     log.sendline("sudo docker inspect -f {{'{{.NetworkSettings.IPAddress}}'}} {0}".format(vm_id))
     log.sendline(pwd)
     log.prompt()
-    ip=log.before.decode('utf-8')
-    ip=ip.split('\r\n')
+    ip = log.before.decode('utf-8')
+    ip = ip.split('\r\n')
     for i in ip:
-        if re.match('\d+\.\d+\.\d+\.\d+',i):
-            mgm_ip=i
+        if re.match('\d+\.\d+\.\d+\.\d+', i):
+            mgm_ip = i
     print(mgm_ip)
     log.logout()
     return mgm_ip
+
 
 def delete_the_file(file_name):
     import os
@@ -332,20 +353,21 @@ def delete_the_file(file_name):
         os.remove(file_name)
     return
 
+
 def list_vms():
     from pexpect import pxssh
-    vm_list=[]
-    vms=[]
+    vm_list = []
+    vms = []
     for val in zones.values():
-        log=pxssh.pxssh(timeout=120)
+        log = pxssh.pxssh(timeout=120)
         ip = val[1]
-        pwd=''
+        pwd = ''
         if ip == '172.16.3.1':
-            pwd='linux@1234'
+            pwd = 'linux@1234'
         else:
-            pwd='linux@123'
-        print(ip,pwd)
-        log.login(ip,'ece792',pwd)
+            pwd = 'linux@123'
+        print(ip, pwd)
+        log.login(ip, 'ece792', pwd)
         log.sendline("sudo docker ps -a --filter status=running |awk 'NR!=1 {print $NF}'")
         log.sendline(pwd)
         log.prompt()
@@ -357,6 +379,7 @@ def list_vms():
         print(vm_list)
         log.logout()
     return vm_list
+
 
 if __name__ == '__main__':
     parse_input_json(filename)
