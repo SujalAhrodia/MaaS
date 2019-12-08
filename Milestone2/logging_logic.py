@@ -6,7 +6,7 @@ import os
 
 zones = {'1': ['zone1', '172.16.3.1'], '2': ['zone2', '172.16.3.2']}
 
-filename = 'generated_files/Testing-t-1.json'
+filename = 'generated_files/same-t-1.json'
 
 monitoring_basic_data = '''
 #
@@ -146,19 +146,11 @@ def parse_input_json(filename):
     input_data = ''
     with open(filename, 'r') as f:
         input_data = json.loads(''.join(f.readlines()))
+    subnet_map = input_data['Subnets']
     vpc_data = input_data['VPC']
     mon_data = input_data['Monitoring']
-    # monitoring_data = mon_data['flag']
-    # print(monitoring_data)
     tenant_name = filename.split('-')[0]
-    # print(Tenant_name)
-    # tenant_file = get_tenant_vpc_file(tenant_name)
-    # print(tenant_file)
-    # if tenant_file == 0:
-    # return 'Tenant File Not found. Looking for {}.json'.format(tenant_name)
-    # with open(tenant_file, 'r') as f:
-    # vpc_data = json.loads(''.join(f.readlines()))
-    # print(vpc_data)
+    tenant_name = tenant_name.split('/')[1]
     tenant_id = filename.split('-')[1] + '-' + filename.split('-')[2][:-5]
     if mon_data['flag']:
         ifdb_master = 'IFDB_' + tenant_id
@@ -209,7 +201,9 @@ def parse_input_json(filename):
                   .format(inventory_file_name, 'generated_files/keepalived.conf', 'generated_files/backup.sh')
         print(command)
         # Run the play for starting keepalived on the Master
-        os.system(command)
+        vm_list = list_vms()
+        if ifdb_master in vm_list:
+            os.system(command)
         inventory_file_name = 'generated_files/' + ifdb_slave + '-inventory.ini'
         print(inventory_file_name)
         delete_the_file(inventory_file_name)
@@ -236,13 +230,15 @@ def parse_input_json(filename):
                   .format(inventory_file_name, 'generated_files/keepalived.conf', 'generated_files/backup.sh')
         print(command)
         # Run the play for starting keepalived on the Slave
-        os.system(command)
+        vm_list = list_vms()
+        if ifdb_slave in vm_list:
+            os.system(command)
         vpc_data['IFDB'] = IFDB_IPs[0]
         vpc_data['IFDB_bak'] = IFDB_IPs[1]
-        vpc_data['Virtual IP'] = virtual_ip
+        vpc_data['Virtual_IP'] = virtual_ip
         print(vpc_data)
         # Populate vpc_data with IFDB data + Virtual IPs
-        ifdb_ip = vpc_data['Virtual IP']
+        ifdb_ip = vpc_data['Virtual_IP']
         vm_id_list = [item for item in vpc_data.keys() if 'VM' in item]
         for vm in vm_id_list:
             vm_collectd_file_name = 'generated_files/' + tenant_id + vm + '_collectd.conf'
@@ -273,7 +269,7 @@ def parse_input_json(filename):
                 command = 'ansible-playbook router_logging.yml -i {0} --extra-vars "netns_name={1} router_sh={2}"'\
                     .format('inventory.ini',
                             tenant_id + 'sr',
-                            str(tenant_id) + 'generated_files/' + str(tenant_id) + 'router_logging.sh')
+                            'generated_files/' + str(tenant_id) + 'router_logging.sh')
                 print(command)
                 os.system(command)
                 mon_data['Traffic_Monitoring'] = False
@@ -292,11 +288,18 @@ def parse_input_json(filename):
                     .format(inventory_file_name, vm_collectd_file_name, mon_data['Custom']['file'])
             else:
                 command = 'ansible-playbook setup_collectd.yml -i {0} --extra-vars "collectd_file={1} custom_file={2}"'\
-                    .format(inventory_file_name, vm_collectd_file_name, 'None')
+                    .format(inventory_file_name, vm_collectd_file_name, "Fail")
             print(command)
             os.system(command)
     else:
         print('Tenant has chosen not to enable monitoring')
+    with open(filename, 'w') as f:
+        output_data = {
+            'Subnets': subnet_map,
+            'VPC': vpc_data,
+            'Monitoring': mon_data}
+        f.write(json.dumps(output_data))
+    print('File with name: ', filename, ' created for the tenant')
 
 
 def find_ifdb_ip(ifdb_master, ifdb_slave):

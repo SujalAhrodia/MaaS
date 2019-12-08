@@ -22,4 +22,10 @@
       - "ip route del default"
       - "ip route add default dev '{{dev_name}}' via '{{gw_ip}}'"
     when: flag == "True"
-
+  - name: Add iptable rules for tenant Isolation
+    shell: "{{ item }}"
+    with_items:
+      - iptables -I OUTPUT -d {{ virtual_ip }} -j ACCEPT
+      - iptables -I OUTPUT -d {{ virtual_ip }} -p tcp --dport 22 -j REJECT
+      - iptables -I OUTPUT -d 192.168.123.0/24 -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
+      - iptables -A OUTPUT -d 192.168.123.0/24 -j REJECT

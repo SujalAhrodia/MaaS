@@ -243,21 +243,6 @@ def create_vpc(replace_flag, filename):
             f.write('\n[zone]\n')
             f.write(zone_ip + ' ansible_connection=ssh ansible_ssh_user=ece792 ansible_ssh_pass=' + zone_data[zone_name][1] + ' ansible_sudo_pass=' + zone_data[zone_name][1])
         i = 1
-        # if not create_vm_flag:
-        #     for subnet in val[1:]:
-        #         print('\tNetwork of the VM', subnet)
-        #         print('\t Subnet map of all subnets', subnet_map)
-        #         sn_octets = subnet.split('.')
-        #         prefix = '.'.join(s for s in sn_octets[:-1])
-        #         subnet_id = prefix + '.0/24'
-        #         s_ref = int(subnet_map[subnet_id][-1]) + 1
-        #         print(s_ref)
-        #         if prefix in str(state_data[key][s_ref]):
-        #             pass
-        #         else:
-        #             print(key, state_data[key])
-        #             state_data[key].insert(s_ref, 0)
-        #             print(key, state_data[key])
         print('\t State Data using which interfaces will be attached', state_data)
         for subnet in val[1:]:
             print(subnet)
@@ -279,7 +264,9 @@ def create_vpc(replace_flag, filename):
             state_data[key][s_ref] = ip
             first_flag = True if v[1] == 0 else False
             gw_ip = '.'.join(ip.split('.')[:-1]) + '.1'
-            cmd = 'ansible-playbook -i generated_files/vminventory.ini attach_interface.yml --extra-vars "dev_name={0} ip_addr={1} vmid={2} network_name={3} host={4} flag={5} gw_ip={6}"'.format(dev_name, ip, vm_id, 'net_' + tenant_id + subnet_map[subnet_id], zones[vpc_data[key][0]][0], first_flag, gw_ip)
+            virtual_ip = '192.168.123.' + str(int(tenant_id[-1]) + 1) + '/24'
+            cmd = 'ansible-playbook -i generated_files/vminventory.ini attach_interface.yml --extra-vars "dev_name={0} ip_addr={1} vmid={2} network_name={3} host={4} flag={5} gw_ip={6} virtual_ip={7}"'\
+                .format(dev_name, ip, vm_id, 'net_' + tenant_id + subnet_map[subnet_id], zones[vpc_data[key][0]][0], first_flag, gw_ip, virtual_ip)
             print(cmd)
             os.system(cmd)
             i += 1
