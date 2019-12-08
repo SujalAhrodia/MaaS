@@ -6,7 +6,7 @@ import os
 
 zones = {'1': ['zone1', '172.16.3.1'], '2': ['zone2', '172.16.3.2']}
 
-filename = 'Testing-t-1.json'
+filename = 'generated_files/Testing-t-1.json'
 
 monitoring_basic_data = '''
 #
@@ -178,7 +178,7 @@ def parse_input_json(filename):
             print(command)
             # Run the inventory for creating the IFDB VMs
             os.system(command)
-        inventory_file_name = ifdb_master + '-inventory.ini'
+        inventory_file_name = 'generated_files/' + ifdb_master + '-inventory.ini'
         print(inventory_file_name)
         delete_the_file(inventory_file_name)
         inventory_file_handler = open(inventory_file_name, 'a')
@@ -196,21 +196,21 @@ def parse_input_json(filename):
         keepalived_conf = gen_keepalived_conf(state='MASTER', m_ip=IFDB_IPs[0],
                                               s_ip=IFDB_IPs[1], prio='102', virtual_ip=virtual_ip)
         # print(keepalived_conf)
-        with open('keepalived.conf', 'w') as f:
+        with open('generated_files/keepalived.conf', 'w') as f:
             f.write(keepalived_conf)
         # backup_sh.format(virtual_ip, IFDB_IPs[1])
         backup_sh = gen_backup_sh(virtual_ip=virtual_ip, peer_ip=IFDB_IPs[1])
         # print(backup_sh)
-        with open('backup.sh', 'w') as f:
+        with open('generated_files/backup.sh', 'w') as f:
             f.write(backup_sh)
-        with open('grafana/grafana.ini', 'w') as f:
+        with open('grafana.ini', 'w') as f:
             f.write(grafana_conf.format(virtual_ip[:-3]))
         command = 'ansible-playbook -i {0} ifdbconf.yml --extra-vars "keepalived_conf={1} backup_sh={2}"'\
-                  .format(inventory_file_name, 'keepalived.conf', 'backup.sh')
+                  .format(inventory_file_name, 'generated_files/keepalived.conf', 'generated_files/backup.sh')
         print(command)
         # Run the play for starting keepalived on the Master
         os.system(command)
-        inventory_file_name = ifdb_slave + '-inventory.ini'
+        inventory_file_name = 'generated_files/' + ifdb_slave + '-inventory.ini'
         print(inventory_file_name)
         delete_the_file(inventory_file_name)
         inventory_file_handler = open(inventory_file_name, 'a')
@@ -225,15 +225,15 @@ def parse_input_json(filename):
         keepalived_conf = gen_keepalived_conf(state='SLAVE', m_ip=IFDB_IPs[1],
                                               s_ip=IFDB_IPs[0], prio='101', virtual_ip=virtual_ip)
         # print(keepalived_conf)
-        with open('keepalived.conf', 'w') as f:
+        with open('generated_files/keepalived.conf', 'w') as f:
             f.write(keepalived_conf)
         # backup_sh.format(virtual_ip, IFDB_IPs[0])
         backup_sh = gen_backup_sh(virtual_ip=virtual_ip, peer_ip=IFDB_IPs[0])
         # print(backup_sh)
-        with open('backup.sh', 'w') as f:
+        with open('generated_files/backup.sh', 'w') as f:
             f.write(backup_sh)
         command = 'ansible-playbook -i {0} ifdbconf.yml --extra-vars "keepalived_conf={1} backup_sh={2}"'\
-                  .format(inventory_file_name, 'keepalived.conf', 'backup.sh')
+                  .format(inventory_file_name, 'generated_files/keepalived.conf', 'generated_files/backup.sh')
         print(command)
         # Run the play for starting keepalived on the Slave
         os.system(command)
@@ -245,7 +245,7 @@ def parse_input_json(filename):
         ifdb_ip = vpc_data['Virtual IP']
         vm_id_list = [item for item in vpc_data.keys() if 'VM' in item]
         for vm in vm_id_list:
-            vm_collectd_file_name = tenant_id + vm + '_collectd.conf'
+            vm_collectd_file_name = 'generated_files/' + tenant_id + vm + '_collectd.conf'
             vm_ip = vpc_data[vm][1]
             delete_the_file(vm_collectd_file_name)
             collectd_file_handler = open(vm_collectd_file_name, 'a')
@@ -265,7 +265,7 @@ def parse_input_json(filename):
                 collectd_file_handler.write('LoadPlugin interface')
             if mon_data['Traffic_Monitoring']:
                 print('Call the ansible script')
-                router_logging_handler = open(str(tenant_id) + 'router_logging.sh', 'w')
+                router_logging_handler = open('generated_files/' + str(tenant_id) + 'router_logging.sh', 'w')
                 router_logging_handler.write(router_logging_sh
                                              .format(tenant_id + 'sr',
                                                      ifdb_ip[:-3]))
@@ -273,14 +273,14 @@ def parse_input_json(filename):
                 command = 'ansible-playbook router_logging.yml -i {0} --extra-vars "netns_name={1} router_sh={2}"'\
                     .format('inventory.ini',
                             tenant_id + 'sr',
-                            str(tenant_id) + 'router_logging.sh')
+                            str(tenant_id) + 'generated_files/' + str(tenant_id) + 'router_logging.sh')
                 print(command)
                 os.system(command)
                 mon_data['Traffic_Monitoring'] = False
             if mon_data['Custom']['flag']:
                 collectd_file_handler.write(custom_plugin_data)
             collectd_file_handler.close()
-            inventory_file_name = tenant_id + '-inventory.ini'
+            inventory_file_name = 'generated_files/' + tenant_id + '-inventory.ini'
             delete_the_file(inventory_file_name)
             inventory_file_handler = open(inventory_file_name, 'a')
             inventory_file_handler.write(inventory_header)
