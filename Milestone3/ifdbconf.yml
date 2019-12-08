@@ -50,7 +50,7 @@
 
   - name: Restart InfluxDB
     service:
-      name: influxd
+      name: influxdb
       state: restarted
 
   - name: Check file exists 

@@ -193,7 +193,7 @@ def parse_input_json(filename):
         with open('grafana/grafana.ini', 'w') as f:
             f.write(grafana_conf.format(virtual_ip[:-3]))
         command = 'ansible-playbook -i {0} ifdbconf.yml --extra-vars "keepalived_conf={1} backup_sh={2}"'\
-                  .format(inventory_file_name, 'keepalived.conf', 'backup.sh')
+                  .format(inventory_file_name, 'generated_files/keepalived.conf', 'backup.sh')
         print(command)
         # Run the play for starting keepalived on the Master
         vm_list = list_vms()
