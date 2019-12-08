@@ -277,8 +277,8 @@ def create_vpc(replace_flag, filename):
             # cmd = 'ansible-playbook -i generated_files/vminventory.ini attach_interface.yml --extra-vars "dev_name={0} ip_addr={1} vmid={2} network_name={3} host={4} flag={5} gw_ip={6} virtual_ip={7}"'\
                 # .format(dev_name, ip, vm_id, 'net_' + tenant_id + subnet_map[subnet_id], zones[vpc_data[key][0]][0], first_flag, gw_ip, virtual_ip)
             
-            cmd = 'ansible-playbook -i generated_files/vminventory.ini attach_interface.yml --extra-vars "ip_net={0} ip_addr={1} vmid={2} tid={3} snid={4} virtual_ip={5}"'\
-                  .format(prefix, ip,key, tenant_id , subnet_map[subnet_id], virtual_ip)
+            cmd = 'ansible-playbook -i generated_files/vminventory.ini attach_interface.yml --extra-vars "ip_net={0} ip_addr={1} vmid={2} tid={3} snid={4} virtual_ip={5} flag={6}"'\
+                  .format(prefix, ip,key, tenant_id , subnet_map[subnet_id], virtual_ip, first_flag)
             
             print(cmd)
             os.system(cmd)

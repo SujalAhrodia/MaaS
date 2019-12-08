@@ -1,0 +1,113 @@
+---
+- hosts: ip1
+  user: root
+  become: true
+
+  tasks:
+  - name: Update 'keepalived.conf'
+    copy:
+      src: ./{{keepalived_conf}}
+      dest: /etc/keepalived/keepalived.conf
+      owner: root
+      mode: '0644'
+  
+  - name: Restart Keepalived
+    service:
+      name: keepalived
+      state: restarted
+
+  - name: Add backup script
+    copy:
+      src: ./{{backup_sh}}
+      dest: /opt/backup.sh
+      owner: root
+      mode: '0777'
+  
+  - name: add grafana.ini
+    copy:
+      src: grafana/grafana.ini
+      dest: /etc/grafana/grafana.ini
+
+  - name: add datasources.yaml
+    copy:
+      dest: /etc/grafana/provisioning/datasources
+      src: grafana/datasources/sample.yml
+
+  - name: add dashboards.json
+    copy:
+      dest: /etc/grafana/provisioning/dashboards
+      src: grafana/dashboards/MaaS.json
+
+  - name: add dashboards.yaml
+    copy:
+      dest: /etc/grafana/provisioning/dashboards
+      src: grafana/dashboards/sample.yml
+
+  - name: Restart grafana
+    service:
+      name: grafana-server
+      state: restarted
+
+  - name: Restart InfluxDB
+    service:
+      name: influxd
+      state: restarted
+
+  - name: Check file exists 
+    stat:
+      path: /root/.ssh
+    register: file_details
+
+  - name: Create ssh directory
+    file:
+      path: /root/.ssh
+      state: directory
+    when: file_details.stat.exists == False 
+  
+  - name: Create ssh key
+    command : ssh-keygen -q -t rsa -f /root/.ssh/id_rsa -C "" -N ""
+    args:
+      creates: /root/.ssh/id_rsa
+
+  - name: Copy ssh key
+    fetch:
+      src: /root/.ssh/id_rsa.pub
+      dest: fetched/
+      flat: true
+  
+  - name: Setup cron job
+    cron:
+      name: Send iptables count to IFDB every minute
+      job: sh /opt/backup.sh >/dev/null 2>&1
+      minute: "15"
+
+# Send key to other IFDB
+- hosts: ip2
+  become: true
+  
+  tasks:
+  - name: Check file exists 
+    stat:
+      path: /root/.ssh
+    register: file_details1
+
+  - name: Create ssh directory
+    file:
+      path: /root/.ssh
+      state: directory
+    when: file_details1.stat.exists == False 
+
+  - name: Copy ssh key
+    copy:
+      src: ./fetched/id_rsa.pub
+      dest: /etc/ssh/id_rsa.pub
+      owner: root
+      mode: '0644'
+  
+  - name: Create authorized_keys
+    file:
+      path: /root/.ssh/authorized_keys
+      state: touch
+
+  - name: Set authorized key
+    shell: cat /etc/ssh/id_rsa.pub > /root/.ssh/authorized_keys
