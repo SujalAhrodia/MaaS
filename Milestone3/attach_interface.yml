@@ -38,7 +38,7 @@
     when: flag == "True"
   
   - name: Add iptable rules for tenant Isolation
-    shell: "{{ item }}"
+    shell: "docker exec {{tid}}{{vmid}} {{ item }}"
     with_items:
       - iptables -I OUTPUT -d {{ virtual_ip }} -j ACCEPT
       - iptables -I OUTPUT -d {{ virtual_ip }} -p tcp --dport 22 -j REJECT

@@ -23,7 +23,7 @@
     cron:
       name: Seting up the custom logging
       job: "python /opt/custom_plugins/data.py > /dev/null 2>&1"
-      minutes: 1
+      minute: "1"
     when: custom_file != "Fail"
 
   - name: Restarting Collectd on the VM
